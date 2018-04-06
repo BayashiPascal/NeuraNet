@@ -8,7 +8,7 @@ The evaluation of the NeuraNet consists of taking each link, ordered on index of
 
 The generic base functions is a linear function. However by using several links with same first and second value it is possible to simulate any polynomial function. Also, there is no concept of layer inside hidden values, but the first value index is constrained to be lower than the second one. So, the links can be arranged to form layers of subset of hidden values, while still allowing any other type of arrangement inisde hidden values. Also, a link can be inactivated by setting its base function index to -1. Finally, all values are constrained to [-1.0,1.0].\\
 
-NeuraNet provides functions to easily use the library GenAlg to search the values of base functions and links' parameters.\\
+NeuraNet provides functions to easily use the library GenAlg to search the values of base functions and links' parameters. An example in the unit tests (see below).\\
 
 It uses the \begin{ttfamily}PBErr\end{ttfamily} library.\\
 
@@ -16,9 +16,9 @@ It uses the \begin{ttfamily}PBErr\end{ttfamily} library.\\
 
 The generic base function is defined as follow:\\
 \begin{equation}
-B(x)=tan(1.57079b_o)(x+b_1)+b_2
+B(x)=\left[tan(1.57079*b_o)(x+b_1)+b_2\right]\cap[-1.0,1.0]
 \end{equation}
-where $b_0$, $b_1$, $b_2$ are the parameters of the base function.
+where $\left\lbrace b_0,b_1,b_2\right\rbrace\in\mathbb{R}^3$ are the parameters of the base function and $x\in[-1.0,1.0]$ and $B(x)\in[-1.0,1.0]$.
 
 \section{Interface}
 
@@ -91,14 +91,16 @@ bestnn.txt:\\
 \end{center}
 
 Bases:\\
+
 \begin{tabular}{cc}
 id&B(x)\\
-0&tan(0.504549*1.57079)*(x-0.819784)+0.832003=1.014387x+0.000414\\
-1&tan(-0.313292*1.57079)*(x+0.050474)-0.576482=-0.536109x-0.603541\\
-2&tan(-0.519646*1.57079)*(x+0.646151)+0.701341=-1.063698x+0.01403\\
-\end{tabular}
+0&$tan(0.504549*1.57079)*(x-0.819784)+0.832003=1.014387x+0.000414$\\
+1&$tan(-0.313292*1.57079)*(x+0.050474)-0.576482=-0.536109x-0.603541$\\
+2&$tan(-0.519646*1.57079)*(x+0.646151)+0.701341=-1.063698x+0.01403$\\
+\end{tabular}\\
 
 Values:\\
+
 \begin{tabular}{cc}
 id&value\\
 0&x\\
