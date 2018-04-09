@@ -313,10 +313,12 @@ void UnitTestNeuraNetGA() {
   float ev = 0.0;
   do {
     for (int iEnt = GAGetNbAdns(ga); iEnt--;) {
-      NNSetBases(nn, GAAdnAdnF(GAAdn(ga, iEnt)));
-      NNSetLinks(nn, GAAdnAdnI(GAAdn(ga, iEnt)));
-      float value = evaluate(nn);
-      GASetAdnValue(ga, GAAdn(ga, iEnt), value);
+      if (GAAdnIsNew(GAAdn(ga, iEnt))) {
+        NNSetBases(nn, GAAdnAdnF(GAAdn(ga, iEnt)));
+        NNSetLinks(nn, GAAdnAdnI(GAAdn(ga, iEnt)));
+        float value = evaluate(nn);
+        GASetAdnValue(ga, GAAdn(ga, iEnt), value);
+      }
     }
     GAStep(ga);
     NNSetBases(nn, GABestAdnF(ga));
@@ -324,10 +326,10 @@ void UnitTestNeuraNetGA() {
     ev = evaluate(nn);
     if (ev > best + PBMATH_EPSILON) {
       best = ev;
-      printf("%d %f\n", GAGetCurEpoch(ga), best);
+      printf("%lu %f\n", GAGetCurEpoch(ga), best);
     }
   } while (GAGetCurEpoch(ga) < 30000 && fabs(ev) > 0.001);
-  printf("best after %d epochs: %f \n", GAGetCurEpoch(ga), best);
+  printf("best after %lu epochs: %f \n", GAGetCurEpoch(ga), best);
   NNPrintln(nn, stdout);
   FILE* fd = fopen("./bestnn.txt", "w");
   NNSave(nn, fd);
