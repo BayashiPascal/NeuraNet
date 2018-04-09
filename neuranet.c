@@ -27,9 +27,9 @@ NeuraNet* NeuraNetCreate(int nbInput, int nbOutput, int nbMaxHidden,
     sprintf(NeuraNetErr->_msg, "'nbOutput' is invalid (0<%d)", nbOutput);
     PBErrCatch(NeuraNetErr);
   }
-  if (nbMaxHidden <= 0) {
+  if (nbMaxHidden < 0) {
     NeuraNetErr->_type = PBErrTypeInvalidArg;
-    sprintf(NeuraNetErr->_msg, "'nbMaxHidden' is invalid (0<%d)", 
+    sprintf(NeuraNetErr->_msg, "'nbMaxHidden' is invalid (0<=%d)", 
       nbMaxHidden);
     PBErrCatch(NeuraNetErr);
   }
@@ -56,7 +56,10 @@ NeuraNet* NeuraNetCreate(int nbInput, int nbOutput, int nbMaxHidden,
   that->_nbMaxLinks = nbMaxLinks;
   that->_bases = VecFloatCreate(nbMaxBases * NN_NBPARAMBASE);
   that->_links = VecShortCreate(nbMaxLinks * NN_NBPARAMLINK);
-  that->_hidVal = VecFloatCreate(nbMaxHidden);
+  if (nbMaxHidden > 0)
+    that->_hidVal = VecFloatCreate(nbMaxHidden);
+  else
+    that->_hidVal = NULL;
   // Return the new NeuraNet
   return that;  
 }
@@ -118,7 +121,8 @@ void NNEval(NeuraNet* that, VecFloat* input, VecFloat* output) {
   VecShort* nbIn = 
     VecShortCreate(NNGetNbMaxHidden(that) + NNGetNbOutput(that));
   // Reset the hidden values and output
-  VecSetNull(NNHiddenValues(that));
+  if (NNGetNbMaxHidden(that) > 0)
+    VecSetNull(NNHiddenValues(that));
   VecSetNull(output);
   // Declare two variables to memorize the starting index of hidden 
   // values and output values in the link definition
