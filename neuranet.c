@@ -145,14 +145,12 @@ void NNEval(NeuraNet* that, VecFloat* input, VecFloat* output) {
       VecGet(that->_links, jLink + 2) != prevLink[1])) {
       // Add the previous output value to the output of the previous link
       if (prevLink[1] < startOut)
-        VecSet(that->_hidVal, prevLink[1] - startHid,
-          VecGet(that->_hidVal, prevLink[1] - startHid) + prevOut);
+        VecSetAdd(that->_hidVal, prevLink[1] - startHid,
+          prevOut);
       else 
-        VecSet(output, prevLink[1] - startOut,
-          VecGet(output, prevLink[1] - startOut) + prevOut);
+        VecSetAdd(output, prevLink[1] - startOut, prevOut);
       // Increment the nb of input on this output
-      VecSet(nbIn, prevLink[1] - startHid, 
-        VecGet(nbIn, prevLink[1] - startHid) + 1);
+      VecSetAdd(nbIn, prevLink[1] - startHid, 1);
       // Reset the previous output 
       prevOut = 1.0;
     }
@@ -180,11 +178,9 @@ void NNEval(NeuraNet* that, VecFloat* input, VecFloat* output) {
   }
   // Update the output of the last link
   if (prevLink[1] < startOut)
-    VecSet(that->_hidVal, prevLink[1] - startHid,
-      VecGet(that->_hidVal, prevLink[1] - startHid) + prevOut);
+    VecSetAdd(that->_hidVal, prevLink[1] - startHid, prevOut);
   else 
-    VecSet(output, prevLink[1] - startOut,
-      VecGet(output, prevLink[1] - startOut) + prevOut);
+    VecSetAdd(output, prevLink[1] - startOut, prevOut);
   // Normalise output
   for (int iVal = VecGetDim(output); iVal--;) {
     int n = VecGet(nbIn, NNGetNbMaxHidden(that) + iVal);
