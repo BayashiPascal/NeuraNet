@@ -178,7 +178,7 @@ void UnitTestNeuraNetSaveLoad() {
   NNSetLinks(nn, links);
   VecFree(&links);
   FILE* fd = fopen("./neuranet.txt", "w");
-  if (NNSave(nn, fd) == false) {
+  if (NNSave(nn, fd, false) == false) {
     NeuraNetErr->_type = PBErrTypeUnitTestFailed;
     sprintf(NeuraNetErr->_msg, "NNSave failed");
     PBErrCatch(NeuraNetErr);
@@ -328,11 +328,12 @@ void UnitTestNeuraNetGA() {
       best = ev;
       printf("%lu %f\n", GAGetCurEpoch(ga), best);
     }
-  } while (GAGetCurEpoch(ga) < 30000 && fabs(ev) > 0.001);
+  //} while (GAGetCurEpoch(ga) < 30000 && fabs(ev) > 0.001);
+  } while (GAGetCurEpoch(ga) < 100 && fabs(ev) > 0.001);
   printf("best after %lu epochs: %f \n", GAGetCurEpoch(ga), best);
   NNPrintln(nn, stdout);
   FILE* fd = fopen("./bestnn.txt", "w");
-  NNSave(nn, fd);
+  NNSave(nn, fd, false);
   fclose(fd);
   NeuraNetFree(&nn);
   GenAlgFree(&ga);

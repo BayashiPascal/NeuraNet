@@ -191,9 +191,118 @@ void NNEval(NeuraNet* that, VecFloat* input, VecFloat* output) {
   VecFree(&nbIn);
 }
 
+// Function which return the JSON encoding of 'that' 
+JSONNode* NNEncodeAsJSON(NeuraNet* that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBMathErr->_type = PBErrTypeNullPointer;
+    sprintf(PBMathErr->_msg, "'that' is null");
+    PBErrCatch(PBMathErr);
+  }
+#endif
+  // Create the JSON structure
+  JSONNode* json = JSONCreate();
+  // Declare a buffer to convert value into string
+  char val[100];
+  // Encode the nbInputVal
+  sprintf(val, "%d", that->_nbInputVal);
+  JSONAddProp(json, "_nbInputVal", val);
+  // Encode the nbOutputVal
+  sprintf(val, "%d", that->_nbOutputVal);
+  JSONAddProp(json, "_nbOutputVal", val);
+  // Encode the nbMaxHidVal
+  sprintf(val, "%d", that->_nbMaxHidVal);
+  JSONAddProp(json, "_nbMaxHidVal", val);
+  // Encode the nbMaxBases
+  sprintf(val, "%d", that->_nbMaxBases);
+  JSONAddProp(json, "_nbMaxBases", val);
+  // Encode the nbMaxLinks
+  sprintf(val, "%d", that->_nbMaxLinks);
+  JSONAddProp(json, "_nbMaxLinks", val);
+  // Encode the bases
+  JSONAddProp(json, "_bases", VecEncodeAsJSON(that->_bases));
+  // Encode the links
+  JSONAddProp(json, "_links", VecEncodeAsJSON(that->_links));
+  // Return the created JSON 
+  return json;
+}
+
+// Function which decode from JSON encoding 'json' to 'that'
+bool NNDecodeAsJSON(NeuraNet** that, JSONNode* json) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    PBMathErr->_type = PBErrTypeNullPointer;
+    sprintf(PBMathErr->_msg, "'that' is null");
+    PBErrCatch(PBMathErr);
+  }
+  if (json == NULL) {
+    PBMathErr->_type = PBErrTypeNullPointer;
+    sprintf(PBMathErr->_msg, "'json' is null");
+    PBErrCatch(PBMathErr);
+  }
+#endif
+  // If 'that' is already allocated
+  if (*that != NULL)
+    // Free memory
+    NeuraNetFree(that);
+  // Decode the nbInputVal
+  JSONNode* prop = JSONProperty(json, "_nbInputVal");
+  if (prop == NULL) {
+    return false;
+  }
+  int nbInputVal = atoi(JSONLabel(JSONValue(prop, 0)));
+  // Decode the nbOutputVal
+  prop = JSONProperty(json, "_nbOutputVal");
+  if (prop == NULL) {
+    return false;
+  }
+  int nbOutputVal = atoi(JSONLabel(JSONValue(prop, 0)));
+  // Decode the nbMaxHidVal
+  prop = JSONProperty(json, "_nbMaxHidVal");
+  if (prop == NULL) {
+    return false;
+  }
+  int nbMaxHidVal = atoi(JSONLabel(JSONValue(prop, 0)));
+  // Decode the nbMaxBases
+  prop = JSONProperty(json, "_nbMaxBases");
+  if (prop == NULL) {
+    return false;
+  }
+  int nbMaxBases = atoi(JSONLabel(JSONValue(prop, 0)));
+  // Decode the nbMaxLinks
+  prop = JSONProperty(json, "_nbMaxLinks");
+  if (prop == NULL) {
+    return false;
+  }
+  int nbMaxLinks = atoi(JSONLabel(JSONValue(prop, 0)));
+  // Allocate memory
+  *that = NeuraNetCreate(nbInputVal, nbOutputVal, nbMaxHidVal, 
+    nbMaxBases, nbMaxLinks);
+  // Decode the bases
+  prop = JSONProperty(json, "_bases");
+  if (prop == NULL) {
+    return false;
+  }
+  if (!VecDecodeAsJSON(&((*that)->_bases), prop)) {
+    return false;
+  }
+  // Decode the links
+  prop = JSONProperty(json, "_links");
+  if (prop == NULL) {
+    return false;
+  }
+  if (!VecDecodeAsJSON(&((*that)->_links), prop)) {
+    return false;
+  }
+  // Return the success code
+  return true;
+}
+
 // Save the NeuraNet 'that' to the stream 'stream'
+// If 'compact' equals true it saves in compact form, else it saves in 
+// readable form
 // Return true if the NeuraNet could be saved, false else
-bool NNSave(NeuraNet* that, FILE* stream) {
+bool NNSave(NeuraNet* that, FILE* stream, bool compact) {
 #if BUILDMODE == 0
   if (that == NULL) {
     NeuraNetErr->_type = PBErrTypeNullPointer;
@@ -206,19 +315,15 @@ bool NNSave(NeuraNet* that, FILE* stream) {
     PBErrCatch(NeuraNetErr);
   }
 #endif
-  // Save properties
-  int ret = fprintf(stream, "%d %d %d %d %d\n", 
-    that->_nbInputVal, that->_nbOutputVal, that->_nbMaxHidVal, 
-    that->_nbMaxBases, that->_nbMaxLinks);
-  if (ret < 0)
+  // Get the JSON encoding
+  JSONNode* json = NNEncodeAsJSON(that);
+  // Save the JSON
+  if (!JSONSave(json, stream, compact)) {
     return false;
-  // Save the bases
-  if (!VecSave(that->_bases, stream))
-    return false;
-  // Save the links
-  if (!VecSave(that->_links, stream))
-    return false;
-  // Return the successful code
+  }
+  // Free memory
+  JSONFree(&json);
+  // Return success code
   return true;
 }
 
@@ -238,30 +343,19 @@ bool NNLoad(NeuraNet** that, FILE* stream) {
     PBErrCatch(NeuraNetErr);
   }
 #endif
-  // If 'that' is already allocated
-  if (*that != NULL)
-    // Free memory
-    NeuraNetFree(that);
-  // Read the properties
-  int nbInputVal;
-  int nbOutputVal;
-  int nbMaxHidVal;
-  int nbMaxBases;
-  int nbMaxLinks;
-  int ret = fscanf(stream, "%d %d %d %d %d", &nbInputVal, &nbOutputVal, 
-    &nbMaxHidVal, &nbMaxBases, &nbMaxLinks);
-  if (ret == EOF)
+  // Declare a json to load the encoded data
+  JSONNode* json = JSONCreate();
+  // Load the whole encoded data
+  if (!JSONLoad(json, stream)) {
     return false;
-  // Declare the loaded NeuraNet
-  *that = NeuraNetCreate(nbInputVal, nbOutputVal, nbMaxHidVal, 
-    nbMaxBases, nbMaxLinks);
-  // Load the bases
-  if (!VecLoad(&((*that)->_bases), stream))
+  }
+  // Decode the data from the JSON
+  if (!NNDecodeAsJSON(that, json)) {
     return false;
-  // Load the links
-  if (!VecLoad(&((*that)->_links), stream))
-    return false;
-  // Return the successful code
+  }
+  // Free the memory used by the JSON
+  JSONFree(&json);
+  // Return the success code
   return true;
 }
 

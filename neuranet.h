@@ -151,9 +151,17 @@ void NNSetLinks(NeuraNet* that, VecShort* links);
 // are ignored
 void NNEval(NeuraNet* that, VecFloat* input, VecFloat* output);
 
+// Function which return the JSON encoding of 'that' 
+JSONNode* NNEncodeAsJSON(NeuraNet* that);
+
+// Function which decode from JSON encoding 'json' to 'that'
+bool NNDecodeAsJSON(NeuraNet** that, JSONNode* json);
+
 // Save the NeuraNet 'that' to the stream 'stream'
+// If 'compact' equals true it saves in compact form, else it saves in 
+// readable form
 // Return true if the NeuraNet could be saved, false else
-bool NNSave(NeuraNet* that, FILE* stream);
+bool NNSave(NeuraNet* that, FILE* stream, bool compact);
 
 // Load the NeuraNet 'that' from the stream 'stream'
 // If 'that' is not null the memory is first freed 
