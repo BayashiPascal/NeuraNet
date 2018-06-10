@@ -49,11 +49,11 @@ NeuraNet* NeuraNetCreate(int nbInput, int nbOutput, int nbMaxHidden,
   // Declare the new NeuraNet
   NeuraNet* that = PBErrMalloc(NeuraNetErr, sizeof(NeuraNet));
   // Set properties
-  that->_nbInputVal = nbInput;
-  that->_nbOutputVal = nbOutput;
-  that->_nbMaxHidVal = nbMaxHidden;
-  that->_nbMaxBases = nbMaxBases;
-  that->_nbMaxLinks = nbMaxLinks;
+  *(int*)&(that->_nbInputVal) = nbInput;
+  *(int*)&(that->_nbOutputVal) = nbOutput;
+  *(int*)&(that->_nbMaxHidVal) = nbMaxHidden;
+  *(int*)&(that->_nbMaxBases) = nbMaxBases;
+  *(int*)&(that->_nbMaxLinks) = nbMaxLinks;
   that->_bases = VecFloatCreate(nbMaxBases * NN_NBPARAMBASE);
   that->_links = VecShortCreate(nbMaxLinks * NN_NBPARAMLINK);
   if (nbMaxHidden > 0)

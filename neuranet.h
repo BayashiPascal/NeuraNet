@@ -44,15 +44,15 @@ float NNBaseFun(float* param, float x);
 
 typedef struct NeuraNet {
   // Nb of input values
-  int _nbInputVal;
+  const int _nbInputVal;
   // Nb of output values
-  int _nbOutputVal;
+  const int _nbOutputVal;
   // Nb max of hidden values
-  int _nbMaxHidVal;
+  const int _nbMaxHidVal;
   // Nb max of base functions
-  int _nbMaxBases;
+  const int _nbMaxBases;
   // Nb max of links
-  int _nbMaxLinks;
+  const int _nbMaxLinks;
   // VecFloat describing the base functions
   // NN_NBPARAMBASE values per base function
   VecFloat* _bases;
