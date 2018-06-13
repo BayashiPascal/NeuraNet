@@ -14,8 +14,8 @@
 // Create a new NeuraNet with 'nbInput' input values, 'nbOutput' 
 // output values, 'nbMaxHidden' hidden values, 'nbMaxBases' base 
 // functions, 'nbMaxLinks' links
-NeuraNet* NeuraNetCreate(int nbInput, int nbOutput, int nbMaxHidden, 
-  int nbMaxBases, int nbMaxLinks) {
+NeuraNet* NeuraNetCreate(const int nbInput, const int nbOutput, const int nbMaxHidden, 
+  const int nbMaxBases, const int nbMaxLinks) {
 #if BUILDMODE == 0
   if (nbInput <= 0) {
     NeuraNetErr->_type = PBErrTypeInvalidArg;
@@ -84,7 +84,7 @@ void NeuraNetFree(NeuraNet** that) {
 // All values of 'output' are set to 0.0 before evaluating
 // Links which refer to values out of bounds of 'input' or 'output'
 // are ignored
-void NNEval(NeuraNet* that, VecFloat* input, VecFloat* output) {
+void NNEval(const NeuraNet* const that, const VecFloat* const input, VecFloat* const output) {
 #if BUILDMODE == 0
   if (that == NULL) {
     NeuraNetErr->_type = PBErrTypeNullPointer;
@@ -122,7 +122,7 @@ void NNEval(NeuraNet* that, VecFloat* input, VecFloat* output) {
     VecShortCreate(NNGetNbMaxHidden(that) + NNGetNbOutput(that));
   // Reset the hidden values and output
   if (NNGetNbMaxHidden(that) > 0)
-    VecSetNull(NNHiddenValues(that));
+    VecSetNull(that->_hidVal);
   VecSetNull(output);
   // Declare two variables to memorize the starting index of hidden 
   // values and output values in the link definition
@@ -192,7 +192,7 @@ void NNEval(NeuraNet* that, VecFloat* input, VecFloat* output) {
 }
 
 // Function which return the JSON encoding of 'that' 
-JSONNode* NNEncodeAsJSON(NeuraNet* that) {
+JSONNode* NNEncodeAsJSON(const NeuraNet* const that) {
 #if BUILDMODE == 0
   if (that == NULL) {
     PBMathErr->_type = PBErrTypeNullPointer;
@@ -228,7 +228,7 @@ JSONNode* NNEncodeAsJSON(NeuraNet* that) {
 }
 
 // Function which decode from JSON encoding 'json' to 'that'
-bool NNDecodeAsJSON(NeuraNet** that, JSONNode* json) {
+bool NNDecodeAsJSON(NeuraNet** that, const JSONNode* const json) {
 #if BUILDMODE == 0
   if (that == NULL) {
     PBMathErr->_type = PBErrTypeNullPointer;
@@ -302,7 +302,7 @@ bool NNDecodeAsJSON(NeuraNet** that, JSONNode* json) {
 // If 'compact' equals true it saves in compact form, else it saves in 
 // readable form
 // Return true if the NeuraNet could be saved, false else
-bool NNSave(NeuraNet* that, FILE* stream, bool compact) {
+bool NNSave(const NeuraNet* const that, FILE* const stream, const bool compact) {
 #if BUILDMODE == 0
   if (that == NULL) {
     NeuraNetErr->_type = PBErrTypeNullPointer;
@@ -330,7 +330,7 @@ bool NNSave(NeuraNet* that, FILE* stream, bool compact) {
 // Load the NeuraNet 'that' from the stream 'stream'
 // If 'that' is not null the memory is first freed 
 // Return true if the NeuraNet could be loaded, false else
-bool NNLoad(NeuraNet** that, FILE* stream) {
+bool NNLoad(NeuraNet** that, FILE* const stream) {
 #if BUILDMODE == 0
   if (that == NULL) {
     NeuraNetErr->_type = PBErrTypeNullPointer;
@@ -360,7 +360,7 @@ bool NNLoad(NeuraNet** that, FILE* stream) {
 }
 
 // Print the NeuraNet 'that' to the stream 'stream'
-void NNPrintln(NeuraNet* that, FILE* stream) {
+void NNPrintln(const NeuraNet* const that, FILE* const stream) {
 #if BUILDMODE == 0
   if (that == NULL) {
     NeuraNetErr->_type = PBErrTypeNullPointer;
@@ -394,7 +394,7 @@ void NNPrintln(NeuraNet* that, FILE* stream) {
 // If the input id is higher than the output id they are swap
 // The links description in the NeuraNet are ordered in increasing 
 // value of input id and output id
-void NNSetLinks(NeuraNet* that, VecShort* links) {
+void NNSetLinks(NeuraNet* const that, const VecShort* const links) {
 #if BUILDMODE == 0
   if (that == NULL) {
     NeuraNetErr->_type = PBErrTypeNullPointer;
@@ -448,20 +448,20 @@ void NNSetLinks(NeuraNet* that, VecShort* links) {
     int iLink = 0;
     do {
       short *link = GSetIterGet(&iter);
-      VecSet(NNLinks(that), iLink * NN_NBPARAMLINK, link[0]);
+      VecSet(that->_links, iLink * NN_NBPARAMLINK, link[0]);
       if (link[1] <= link[2]) {
-        VecSet(NNLinks(that), iLink * NN_NBPARAMLINK + 1, link[1]);
-        VecSet(NNLinks(that), iLink * NN_NBPARAMLINK + 2, link[2]);
+        VecSet(that->_links, iLink * NN_NBPARAMLINK + 1, link[1]);
+        VecSet(that->_links, iLink * NN_NBPARAMLINK + 2, link[2]);
       } else {
-        VecSet(NNLinks(that), iLink * NN_NBPARAMLINK + 1, link[2]);
-        VecSet(NNLinks(that), iLink * NN_NBPARAMLINK + 2, link[1]);
+        VecSet(that->_links, iLink * NN_NBPARAMLINK + 1, link[2]);
+        VecSet(that->_links, iLink * NN_NBPARAMLINK + 2, link[1]);
       }
       ++iLink;
     } while (GSetIterStep(&iter));
   }
   // Reset the inactive links
   for (int iLink = nbLink; iLink < NNGetNbMaxLinks(that); ++iLink)
-    VecSet(NNLinks(that), iLink * NN_NBPARAMLINK, -1);
+    VecSet(that->_links, iLink * NN_NBPARAMLINK, -1);
   // Free the memory
   GSetFlush(&set);
 }

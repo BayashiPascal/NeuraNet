@@ -232,12 +232,15 @@ void UnitTestNeuraNetEvalPrint() {
   // output[0] = 0.5*(-input[0]^2+input[1])
   // output[1] = input[1]
   // output[2] = 0
-  VecSet(NNBases(nn), 0, 0.5);
-  VecSet(NNBases(nn), 3, -0.5);
-  VecSet(NNBases(nn), 8, -0.5);
+  NNBasesSet(nn, 0, 0.5);
+  NNBasesSet(nn, 3, -0.5);
+  NNBasesSet(nn, 8, -0.5);
   short data[21] = {0,0,3, 1,0,3, 0,1,4, 0,3,6, 0,4,6, 0,4,7, -1,0,0};
+  VecShort *links = VecShortCreate(21);
   for (int i = 21; i--;)
-    VecSet(NNLinks(nn), i, data[i]);
+    VecSet(links, i, data[i]);
+  NNSetLinks(nn, links);
+  VecFree(&links);
   VecFloat3D input = VecFloatCreateStatic3D();
   VecFloat3D output = VecFloatCreateStatic3D();
   VecFloat3D check = VecFloatCreateStatic3D();
@@ -271,7 +274,7 @@ void UnitTestNeuraNetEvalPrint() {
 }
 
 #ifdef GENALG_H
-float evaluate(NeuraNet* nn) {
+float evaluate(const NeuraNet* const nn) {
   VecFloat3D input = VecFloatCreateStatic3D();
   VecFloat3D output = VecFloatCreateStatic3D();
   VecFloat3D check = VecFloatCreateStatic3D();
@@ -326,10 +329,10 @@ void UnitTestNeuraNetGA() {
     ev = evaluate(nn);
     if (ev > best + PBMATH_EPSILON) {
       best = ev;
-      printf("%lu %f\n", GAGetCurEpoch(ga), best);
+      //printf("%lu %f\n", GAGetCurEpoch(ga), best);
     }
-  //} while (GAGetCurEpoch(ga) < 30000 && fabs(ev) > 0.001);
-  } while (GAGetCurEpoch(ga) < 100 && fabs(ev) > 0.001);
+  } while (GAGetCurEpoch(ga) < 30000 && fabs(ev) > 0.001);
+  //} while (GAGetCurEpoch(ga) < 100 && fabs(ev) > 0.001);
   printf("best after %lu epochs: %f \n", GAGetCurEpoch(ga), best);
   NNPrintln(nn, stdout);
   FILE* fd = fopen("./bestnn.txt", "w");

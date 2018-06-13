@@ -31,7 +31,7 @@
 #if BUILDMODE != 0
 inline
 #endif
-float NNBaseFun(float* param, float x);
+float NNBaseFun(const float* const param, const float x);
 
 // ----- NeuraNet
 
@@ -69,8 +69,8 @@ typedef struct NeuraNet {
 // Create a new NeuraNet with 'nbInput' input values, 'nbOutput' 
 // output values, 'nbMaxHidden' hidden values, 'nbMaxBases' base 
 // functions, 'nbMaxLinks' links
-NeuraNet* NeuraNetCreate(int nbInput, int nbOutput, int nbMaxHidden, 
-  int nbMaxBases, int nbMaxLinks);
+NeuraNet* NeuraNetCreate(const int nbInput, const int nbOutput, const int nbMaxHidden, 
+  const int nbMaxBases, const int nbMaxLinks);
 
 // Free the memory used by the NeuraNet 'that'
 void NeuraNetFree(NeuraNet** that);
@@ -79,69 +79,76 @@ void NeuraNetFree(NeuraNet** that);
 #if BUILDMODE != 0
 inline
 #endif
-int NNGetNbInput(NeuraNet* that);
+int NNGetNbInput(const NeuraNet* const that);
 
 // Get the nb of output values of the NeuraNet 'that'
 #if BUILDMODE != 0
 inline
 #endif
-int NNGetNbOutput(NeuraNet* that);
+int NNGetNbOutput(const NeuraNet* const that);
 
 // Get the nb max of hidden values of the NeuraNet 'that'
 #if BUILDMODE != 0
 inline
 #endif
-int NNGetNbMaxHidden(NeuraNet* that);
+int NNGetNbMaxHidden(const NeuraNet* const that);
 
 // Get the nb max of base functions of the NeuraNet 'that'
 #if BUILDMODE != 0
 inline
 #endif
-int NNGetNbMaxBases(NeuraNet* that);
+int NNGetNbMaxBases(const NeuraNet* const that);
 
 // Get the nb max of links of the NeuraNet 'that'
 #if BUILDMODE != 0
 inline
 #endif
-int NNGetNbMaxLinks(NeuraNet* that);
+int NNGetNbMaxLinks(const NeuraNet* const that);
 
 // Get the parameters of the base functions of the NeuraNet 'that'
 #if BUILDMODE != 0
 inline
 #endif
-VecFloat* NNBases(NeuraNet* that);
+const VecFloat* NNBases(const NeuraNet* const that);
 
 // Get the links description of the NeuraNet 'that'
 #if BUILDMODE != 0
 inline
 #endif
-VecShort* NNLinks(NeuraNet* that);
+const VecShort* NNLinks(const NeuraNet* const that);
 
 // Get the hidden values of the NeuraNet 'that'
 #if BUILDMODE != 0
 inline
 #endif
-VecFloat* NNHiddenValues(NeuraNet* that);
+const VecFloat* NNHiddenValues(const NeuraNet* const that);
 
 // Get the 'iVal'-th hidden value of the NeuraNet 'that'
 #if BUILDMODE != 0
 inline
 #endif
-float NNGetHiddenValue(NeuraNet* that, int iVal);
+float NNGetHiddenValue(const NeuraNet* const that, const int iVal);
 
 // Set the parameters of the base functions of the NeuraNet 'that' to 
 // a copy of 'bases'
 #if BUILDMODE != 0
 inline
 #endif
-void NNSetBases(NeuraNet* that, VecFloat* bases);
+void NNSetBases(NeuraNet* const that, const VecFloat* const bases);
+
+// Set the 'iBase'-th parameter of the base functions of the NeuraNet 
+// 'that' to 'base'
+#if BUILDMODE != 0
+inline
+#endif
+void NNBasesSet(NeuraNet* const that, const int iBase, const float base);
 
 // Set the links description of the NeuraNet 'that' to a copy of 'links'
 // Links with a base function equals to -1 are ignored
 // If the input id is higher than the output id they are swap
 // The links description in the NeuraNet are ordered in increasing 
 // value of input id and output id
-void NNSetLinks(NeuraNet* that, VecShort* links);
+void NNSetLinks(NeuraNet* const that, const VecShort* const links);
 
 // Calculate the output values for the input values 'input' for the 
 // NeuraNet 'that' and memorize the result in 'output'
@@ -149,27 +156,27 @@ void NNSetLinks(NeuraNet* that, VecShort* links);
 // All values of 'output' are set to 0.0 before evaluating
 // Links which refer to values out of bounds of 'input' or 'output'
 // are ignored
-void NNEval(NeuraNet* that, VecFloat* input, VecFloat* output);
+void NNEval(const NeuraNet* const that, const VecFloat* const input, VecFloat* const output);
 
 // Function which return the JSON encoding of 'that' 
-JSONNode* NNEncodeAsJSON(NeuraNet* that);
+JSONNode* NNEncodeAsJSON(const NeuraNet* const that);
 
 // Function which decode from JSON encoding 'json' to 'that'
-bool NNDecodeAsJSON(NeuraNet** that, JSONNode* json);
+bool NNDecodeAsJSON(NeuraNet** that, const JSONNode* const json);
 
 // Save the NeuraNet 'that' to the stream 'stream'
 // If 'compact' equals true it saves in compact form, else it saves in 
 // readable form
 // Return true if the NeuraNet could be saved, false else
-bool NNSave(NeuraNet* that, FILE* stream, bool compact);
+bool NNSave(const NeuraNet* const that, FILE* const stream, const bool compact);
 
 // Load the NeuraNet 'that' from the stream 'stream'
 // If 'that' is not null the memory is first freed 
 // Return true if the NeuraNet could be loaded, false else
-bool NNLoad(NeuraNet** that, FILE* stream);
+bool NNLoad(NeuraNet** that, FILE* const stream);
 
 // Print the NeuraNet 'that' to the stream 'stream'
-void NNPrintln(NeuraNet* that, FILE* stream);
+void NNPrintln(const NeuraNet* const that, FILE* const stream);
 
 // ================= Interface with library GenAlg ==================
 // To use the following functions the user must include the header 
@@ -179,9 +186,9 @@ void NNPrintln(NeuraNet* that, FILE* stream);
 
 // Get the length of the adn of float values to be used in the GenAlg 
 // library for the NeuraNet 'that'
-static int NNGetGAAdnFloatLength(NeuraNet* that)
+static int NNGetGAAdnFloatLength(const NeuraNet* const that)
   __attribute__((unused));
-static int NNGetGAAdnFloatLength(NeuraNet* that) {
+static int NNGetGAAdnFloatLength(const NeuraNet* const that) {
 #if BUILDMODE == 0
   if (that == NULL) {
     NeuraNetErr->_type = PBErrTypeNullPointer;
@@ -194,9 +201,9 @@ static int NNGetGAAdnFloatLength(NeuraNet* that) {
 
 // Get the length of the adn of int values to be used in the GenAlg 
 // library for the NeuraNet 'that'
-static int NNGetGAAdnIntLength(NeuraNet* that)
+static int NNGetGAAdnIntLength(const NeuraNet* const that)
   __attribute__((unused));
-static int NNGetGAAdnIntLength(NeuraNet* that) {
+static int NNGetGAAdnIntLength(const NeuraNet* const that) {
 #if BUILDMODE == 0
   if (that == NULL) {
     NeuraNetErr->_type = PBErrTypeNullPointer;
@@ -209,9 +216,9 @@ static int NNGetGAAdnIntLength(NeuraNet* that) {
 
 // Set the bounds of the GenAlg 'ga' to be used for bases parameters of 
 // the NeuraNet 'that'
-static void NNSetGABoundsBases(NeuraNet* that, GenAlg* ga) 
+static void NNSetGABoundsBases(const NeuraNet* const that, GenAlg* const ga) 
   __attribute__((unused));
-static void NNSetGABoundsBases(NeuraNet* that, GenAlg* ga) {
+static void NNSetGABoundsBases(const NeuraNet* const that, GenAlg* const ga) {
 #if BUILDMODE == 0
   if (that == NULL) {
     NeuraNetErr->_type = PBErrTypeNullPointer;
@@ -243,9 +250,9 @@ static void NNSetGABoundsBases(NeuraNet* that, GenAlg* ga) {
 
 // Set the bounds of the GenAlg 'ga' to be used for links description of 
 // the NeuraNet 'that'
-static void NNSetGABoundsLinks(NeuraNet* that, GenAlg* ga) 
+static void NNSetGABoundsLinks(const NeuraNet* const that, GenAlg* const ga) 
   __attribute__((unused));
-static void NNSetGABoundsLinks(NeuraNet* that, GenAlg* ga) {
+static void NNSetGABoundsLinks(const NeuraNet* const that, GenAlg* const ga) {
 #if BUILDMODE == 0
   if (that == NULL) {
     NeuraNetErr->_type = PBErrTypeNullPointer;
