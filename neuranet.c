@@ -116,79 +116,84 @@ void NNEval(const NeuraNet* const that, const VecFloat* const input, VecFloat* c
     PBErrCatch(NeuraNetErr);
   }
 #endif
-  // Declare a vector to memorize the nb of links in input of each 
-  // hidden values and output values
-  VecShort* nbIn = 
-    VecShortCreate(NNGetNbMaxHidden(that) + NNGetNbOutput(that));
   // Reset the hidden values and output
   if (NNGetNbMaxHidden(that) > 0)
     VecSetNull(that->_hidVal);
   VecSetNull(output);
-  // Declare two variables to memorize the starting index of hidden 
-  // values and output values in the link definition
-  int startHid = NNGetNbInput(that);
-  int startOut = NNGetNbMaxHidden(that) + NNGetNbInput(that);
-  // Declare a variable to memorize the previous link
-  int prevLink[2] = {-1, -1};
-  // Declare a variable to memorize the previous output value
-  float prevOut = 1.0;
-  // Loop on links
-  int iLink = 0;
-  while (iLink < NNGetNbMaxLinks(that) && 
-    VecGet(that->_links, NN_NBPARAMLINK * iLink) != -1) {
-    // Declare a variable for optimization
-    int jLink = NN_NBPARAMLINK * iLink;
-    // If this link has different input or output than previous link
-    // and we are not on the first link
-    if (iLink != 0 && 
-      (VecGet(that->_links, jLink + 1) != prevLink[0] ||
-      VecGet(that->_links, jLink + 2) != prevLink[1])) {
-      // Add the previous output value to the output of the previous link
-      if (prevLink[1] < startOut)
-        VecSetAdd(that->_hidVal, prevLink[1] - startHid,
-          prevOut);
-      else 
-        VecSetAdd(output, prevLink[1] - startOut, prevOut);
-      // Increment the nb of input on this output
-      VecSetAdd(nbIn, prevLink[1] - startHid, 1);
-      // Reset the previous output 
-      prevOut = 1.0;
+  // If there are links in the network
+  if (VecGet(that->_links, 0) != -1) {
+    // Declare a vector to memorize the nb of links in input of each 
+    // hidden values and output values
+    VecShort* nbIn = 
+      VecShortCreate(NNGetNbMaxHidden(that) + NNGetNbOutput(that));
+    // Declare two variables to memorize the starting index of hidden 
+    // values and output values in the link definition
+    int startHid = NNGetNbInput(that);
+    int startOut = NNGetNbMaxHidden(that) + NNGetNbInput(that);
+    // Declare a variable to memorize the previous link
+    int prevLink[2] = {-1, -1};
+    // Declare a variable to memorize the previous output value
+    float prevOut = 1.0;
+    // Loop on links
+    int iLink = 0;
+    while (iLink < NNGetNbMaxLinks(that) && 
+      VecGet(that->_links, NN_NBPARAMLINK * iLink) != -1) {
+      // Declare a variable for optimization
+      int jLink = NN_NBPARAMLINK * iLink;
+      // If this link has different input or output than previous link
+      // and we are not on the first link
+      if (iLink != 0 && 
+        (VecGet(that->_links, jLink + 1) != prevLink[0] ||
+        VecGet(that->_links, jLink + 2) != prevLink[1])) {
+        // Add the previous output value to the output of the previous 
+        // link
+        if (prevLink[1] < startOut)
+          VecSetAdd(that->_hidVal, prevLink[1] - startHid,
+            prevOut);
+        else 
+          VecSetAdd(output, prevLink[1] - startOut, prevOut);
+        // Increment the nb of input on this output
+        VecSetAdd(nbIn, prevLink[1] - startHid, 1);
+        // Reset the previous output 
+        prevOut = 1.0;
+      }
+      // Update the previous link
+      prevLink[0] = VecGet(that->_links, jLink + 1);
+      prevLink[1] = VecGet(that->_links, jLink + 2);
+      // Multiply the previous output by the evaluation of the current 
+      // link with the base function of the link and the normalised 
+      // input value
+      float* param = that->_bases->_val + 
+        VecGet(that->_links, jLink) * NN_NBPARAMBASE;
+      float x = 0.0;
+      if (prevLink[0] < startHid)
+        x = VecGet(input, prevLink[0]);
+      else {
+        int n = VecGet(nbIn, prevLink[0] - startHid);
+        if (n > 0)
+          x = NNGetHiddenValue(that, prevLink[0] - startHid) / 
+            (float)(VecGet(nbIn, prevLink[0] - startHid));
+        else
+          x = NNGetHiddenValue(that, prevLink[0] - startHid);
+      }
+      prevOut *= NNBaseFun(param, x);
+      // Move to the next link
+      ++iLink;
     }
-    // Update the previous link
-    prevLink[0] = VecGet(that->_links, jLink + 1);
-    prevLink[1] = VecGet(that->_links, jLink + 2);
-    // Multiply the previous output by the evaluation of the current link
-    // With the base function of the link and the normalised input value
-    float* param = that->_bases->_val + 
-      VecGet(that->_links, jLink) * NN_NBPARAMBASE;
-    float x = 0.0;
-    if (prevLink[0] < startHid)
-      x = VecGet(input, prevLink[0]);
-    else {
-      int n = VecGet(nbIn, prevLink[0] - startHid);
+    // Update the output of the last link
+    if (prevLink[1] < startOut)
+      VecSetAdd(that->_hidVal, prevLink[1] - startHid, prevOut);
+    else 
+      VecSetAdd(output, prevLink[1] - startOut, prevOut);
+    // Normalise output
+    for (int iVal = VecGetDim(output); iVal--;) {
+      int n = VecGet(nbIn, NNGetNbMaxHidden(that) + iVal);
       if (n > 0)
-        x = NNGetHiddenValue(that, prevLink[0] - startHid) / 
-          (float)(VecGet(nbIn, prevLink[0] - startHid));
-      else
-        x = NNGetHiddenValue(that, prevLink[0] - startHid);
+        VecSet(output, iVal, VecGet(output, iVal) / (float)(n));
     }
-    prevOut *= NNBaseFun(param, x);
-    // Move to the next link
-    ++iLink;
+    // Free memory
+    VecFree(&nbIn);
   }
-  // Update the output of the last link
-  if (prevLink[1] < startOut)
-    VecSetAdd(that->_hidVal, prevLink[1] - startHid, prevOut);
-  else 
-    VecSetAdd(output, prevLink[1] - startOut, prevOut);
-  // Normalise output
-  for (int iVal = VecGetDim(output); iVal--;) {
-    int n = VecGet(nbIn, NNGetNbMaxHidden(that) + iVal);
-    if (n > 0)
-      VecSet(output, iVal, VecGet(output, iVal) / (float)(n));
-  }
-  // Free memory
-  VecFree(&nbIn);
 }
 
 // Function which return the JSON encoding of 'that' 
