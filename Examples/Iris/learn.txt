@@ -1,0 +1,16 @@
+Learning...
+Will stop when curEpoch >= 1000 or bestVal >= 0.999000
+
+Improvement at epoch 1: 0.666667
+Saved the best NeuraNet in ./bestnn.txt
+
+Improvement at epoch 14: 0.706667
+Saved the best NeuraNet in ./bestnn.txt
+
+Improvement at epoch 47: 0.960000
+Saved the best NeuraNet in ./bestnn.txt
+
+Improvement at epoch 125: 0.973333
+Saved the best NeuraNet in ./bestnn.txt
+
+Learning complete

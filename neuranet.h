@@ -57,7 +57,7 @@ typedef struct NeuraNet {
   // NN_NBPARAMBASE values per base function
   VecFloat* _bases;
   // VecShort describing the links
-  // NN_NBPARAMLINK values per link (base id, input id, output ip)
+  // NN_NBPARAMLINK values per link (base id, input id, output id)
   // if (base id equals -1 the link is inactive)
   VecShort* _links;
   // Hidden values
@@ -69,8 +69,8 @@ typedef struct NeuraNet {
 // Create a new NeuraNet with 'nbInput' input values, 'nbOutput' 
 // output values, 'nbMaxHidden' hidden values, 'nbMaxBases' base 
 // functions, 'nbMaxLinks' links
-NeuraNet* NeuraNetCreate(const int nbInput, const int nbOutput, const int nbMaxHidden, 
-  const int nbMaxBases, const int nbMaxLinks);
+NeuraNet* NeuraNetCreate(const int nbInput, const int nbOutput, 
+  const int nbMaxHidden, const int nbMaxBases, const int nbMaxLinks);
 
 // Free the memory used by the NeuraNet 'that'
 void NeuraNetFree(NeuraNet** that);
@@ -131,6 +131,9 @@ float NNGetHiddenValue(const NeuraNet* const that, const int iVal);
 
 // Set the parameters of the base functions of the NeuraNet 'that' to 
 // a copy of 'bases'
+// 'bases' must be of dimension that->nbMaxBases * NN_NBPARAMBASE
+//  each base is defined as param[3] in [-1,1]
+// tan(param[0]*NN_THETA)*(x+param[1])+param[2] 
 #if BUILDMODE != 0
 inline
 #endif
@@ -147,7 +150,10 @@ void NNBasesSet(NeuraNet* const that, const int iBase, const float base);
 // Links with a base function equals to -1 are ignored
 // If the input id is higher than the output id they are swap
 // The links description in the NeuraNet are ordered in increasing 
-// value of input id and output id
+// value of input id and output id, but 'links' doesn't have to be 
+// sorted
+// Each link is defined by (base index, input index, output index)
+// If base index equals -1 it means the link is inactive
 void NNSetLinks(NeuraNet* const that, const VecShort* const links);
 
 // Calculate the output values for the input values 'input' for the 

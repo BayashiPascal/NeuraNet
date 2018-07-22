@@ -226,11 +226,11 @@ void UnitTestNeuraNetEvalPrint() {
   int nbBase = 3;
   int nbLink = 7;
   NeuraNet* nn = NeuraNetCreate(nbIn, nbOut, nbHid, nbBase, nbLink);
-  // hidden[0] = -input[0]^2
-  // hidden[1] = input[1]
+  // hidden[0] = tan(0.5*NN_THETA)*tan(-0.5*NN_THETA)*input[0]^2
+  // hidden[1] = tan(0.5*NN_THETA)*input[1]
   // hidden[2] = 0
-  // output[0] = 0.5*(-input[0]^2+input[1])
-  // output[1] = input[1]
+  // output[0] = tan(0.5*NN_THETA)*hidden[0]+tan(0.5*NN_THETA)*hidden[1]
+  // output[1] = tan(0.5*NN_THETA)*hidden[1]
   // output[2] = 0
   NNBasesSet(nn, 0, 0.5);
   NNBasesSet(nn, 3, -0.5);
@@ -253,13 +253,11 @@ void UnitTestNeuraNetEvalPrint() {
         VecSet(&input, 1, 0.1 * (float)j); 
         VecSet(&input, 2, 0.1 * (float)k);
         NNEval(nn, (VecFloat*)&input, (VecFloat*)&output);
-        VecSet(&checkhidden, 0, -0.999987 * fsquare(VecGet(&input, 0))); 
-        VecSet(&checkhidden, 1, 0.999993 * VecGet(&input, 1)); 
+        VecSet(&checkhidden, 0, tan(0.5 * NN_THETA) * tan(-0.5 * NN_THETA) * fsquare(VecGet(&input, 0))); 
+        VecSet(&checkhidden, 1, tan(0.5 * NN_THETA) * VecGet(&input, 1)); 
         VecSet(&check, 0, 
-          MIN(1.0, MAX(-1.0, 
-            0.999993 * 0.5 * 
-            (VecGet(&checkhidden, 0) + VecGet(&checkhidden, 1)))));
-        VecSet(&check, 1, 0.999993 * VecGet(&checkhidden, 1)); 
+          tan(0.5 * NN_THETA) * (VecGet(&checkhidden, 0) + VecGet(&checkhidden, 1)));
+        VecSet(&check, 1, tan(0.5 * NN_THETA) * VecGet(&checkhidden, 1)); 
         if (VecIsEqual(&output, &check) == false ||
           VecIsEqual(NNHiddenValues(nn), &checkhidden) == false) {
           NeuraNetErr->_type = PBErrTypeUnitTestFailed;
@@ -329,7 +327,7 @@ void UnitTestNeuraNetGA() {
     ev = evaluate(nn);
     if (ev > best + PBMATH_EPSILON) {
       best = ev;
-      //printf("%lu %f\n", GAGetCurEpoch(ga), best);
+      printf("%lu %f\n", GAGetCurEpoch(ga), best);
     }
   } while (GAGetCurEpoch(ga) < 30000 && fabs(ev) > 0.001);
   //} while (GAGetCurEpoch(ga) < 100 && fabs(ev) > 0.001);

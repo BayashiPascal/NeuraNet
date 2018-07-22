@@ -122,10 +122,6 @@ void NNEval(const NeuraNet* const that, const VecFloat* const input, VecFloat* c
   VecSetNull(output);
   // If there are links in the network
   if (VecGet(that->_links, 0) != -1) {
-    // Declare a vector to memorize the nb of links in input of each 
-    // hidden values and output values
-    VecShort* nbIn = 
-      VecShortCreate(NNGetNbMaxHidden(that) + NNGetNbOutput(that));
     // Declare two variables to memorize the starting index of hidden 
     // values and output values in the link definition
     int startHid = NNGetNbInput(that);
@@ -147,13 +143,15 @@ void NNEval(const NeuraNet* const that, const VecFloat* const input, VecFloat* c
         VecGet(that->_links, jLink + 2) != prevLink[1])) {
         // Add the previous output value to the output of the previous 
         // link
-        if (prevLink[1] < startOut)
-          VecSetAdd(that->_hidVal, prevLink[1] - startHid,
-            prevOut);
-        else 
-          VecSetAdd(output, prevLink[1] - startOut, prevOut);
-        // Increment the nb of input on this output
-        VecSetAdd(nbIn, prevLink[1] - startHid, 1);
+        if (prevLink[1] < startOut) {
+          int iVal = prevLink[1] - startHid;
+          float nVal = VecGet(that->_hidVal, iVal) + prevOut;
+          VecSet(that->_hidVal, iVal, nVal);
+        } else { 
+          int iVal = prevLink[1] - startOut;
+          float nVal = VecGet(output, iVal) + prevOut;
+          VecSet(output, iVal, nVal);
+        }
         // Reset the previous output 
         prevOut = 1.0;
       }
@@ -168,31 +166,22 @@ void NNEval(const NeuraNet* const that, const VecFloat* const input, VecFloat* c
       float x = 0.0;
       if (prevLink[0] < startHid)
         x = VecGet(input, prevLink[0]);
-      else {
-        int n = VecGet(nbIn, prevLink[0] - startHid);
-        if (n > 0)
-          x = NNGetHiddenValue(that, prevLink[0] - startHid) / 
-            (float)(VecGet(nbIn, prevLink[0] - startHid));
-        else
-          x = NNGetHiddenValue(that, prevLink[0] - startHid);
-      }
+      else
+        x = NNGetHiddenValue(that, prevLink[0] - startHid);
       prevOut *= NNBaseFun(param, x);
       // Move to the next link
       ++iLink;
     }
     // Update the output of the last link
-    if (prevLink[1] < startOut)
-      VecSetAdd(that->_hidVal, prevLink[1] - startHid, prevOut);
-    else 
-      VecSetAdd(output, prevLink[1] - startOut, prevOut);
-    // Normalise output
-    for (int iVal = VecGetDim(output); iVal--;) {
-      int n = VecGet(nbIn, NNGetNbMaxHidden(that) + iVal);
-      if (n > 0)
-        VecSet(output, iVal, VecGet(output, iVal) / (float)(n));
+    if (prevLink[1] < startOut) {
+      int iVal = prevLink[1] - startHid;
+      float nVal = VecGet(that->_hidVal, iVal) + prevOut;
+      VecSet(that->_hidVal, iVal, nVal);
+    } else { 
+      int iVal = prevLink[1] - startOut;
+      float nVal = VecGet(output, iVal) + prevOut;
+      VecSet(output, iVal, nVal);
     }
-    // Free memory
-    VecFree(&nbIn);
   }
 }
 
@@ -398,7 +387,10 @@ void NNPrintln(const NeuraNet* const that, FILE* const stream) {
 // Links with a base function equals to -1 are ignored
 // If the input id is higher than the output id they are swap
 // The links description in the NeuraNet are ordered in increasing 
-// value of input id and output id
+// value of input id and output id, but 'links' doesn't have to be 
+// sorted
+// Each link is defined by (base index, input index, output index)
+// If base index equals -1 it means the link is inactive
 void NNSetLinks(NeuraNet* const that, const VecShort* const links) {
 #if BUILDMODE == 0
   if (that == NULL) {
