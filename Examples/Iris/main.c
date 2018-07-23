@@ -36,11 +36,12 @@
 typedef enum DataSetCat {
   unknownDataSet,
   datalearn,
-  datatest
+  datatest,
+  dataall
 } DataSetCat;
-#define NB_DATASET 3
+#define NB_DATASET 4
 const char* dataSetNames[NB_DATASET] = {
-  "unknownDataSet", "datalearn", "datatest"
+  "unknownDataSet", "datalearn", "datatest", "dataall"
   };
   
 // Structure for the data set
@@ -89,12 +90,12 @@ bool DataSetLoad(DataSet* const that, const DataSetCat cat) {
     printf("Couldn't open the data set file\n");
     return false;
   }
-  that->_nbSample = 75;
-  that->_samples = 
-    PBErrMalloc(NeuraNetErr, sizeof(Iris) * that->_nbSample);
   char buffer[500];
   int ret = 0;
   if (cat == datalearn) {
+    that->_nbSample = 75;
+    that->_samples = 
+      PBErrMalloc(NeuraNetErr, sizeof(Iris) * that->_nbSample);
     for (int iCat = 0; iCat < 3; ++iCat) {
       for (int iSample = 0; iSample < 25; ++iSample) {
         ret = fscanf(f, "%f,%f,%f,%f,%s", 
@@ -120,6 +121,9 @@ bool DataSetLoad(DataSet* const that, const DataSetCat cat) {
       }
     }
   } else if (cat == datatest) {
+    that->_nbSample = 75;
+    that->_samples = 
+      PBErrMalloc(NeuraNetErr, sizeof(Iris) * that->_nbSample);
     for (int iCat = 0; iCat < 3; ++iCat) {
       for (int iSample = 0; iSample < 25; ++iSample) {
         ret = fscanf(f, "%s\n", buffer);
@@ -142,6 +146,26 @@ bool DataSetLoad(DataSet* const that, const DataSetCat cat) {
           return false;
         }
         that->_samples[25 * iCat + iSample]._cat = (IrisCat)iCat;
+      }
+    }
+  } else if (cat == dataall) {
+    that->_nbSample = 150;
+    that->_samples = 
+      PBErrMalloc(NeuraNetErr, sizeof(Iris) * that->_nbSample);
+    for (int iCat = 0; iCat < 3; ++iCat) {
+      for (int iSample = 0; iSample < 50; ++iSample) {
+        ret = fscanf(f, "%f,%f,%f,%f,%s", 
+          that->_samples[50 * iCat + iSample]._props,
+          that->_samples[50 * iCat + iSample]._props + 1,
+          that->_samples[50 * iCat + iSample]._props + 2,
+          that->_samples[50 * iCat + iSample]._props + 3,
+          buffer);
+        if (ret == EOF) {
+          printf("Couldn't read the dataset\n");
+          fclose(f);
+          return false;
+        }
+        that->_samples[50 * iCat + iSample]._cat = (IrisCat)iCat;
       }
     }
   } else {
