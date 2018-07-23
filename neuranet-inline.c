@@ -21,8 +21,9 @@ float NNBaseFun(const float* const param, const float x) {
     PBErrCatch(NeuraNetErr);
   }
 #endif
-  return MIN(1.0, MAX(-1.0, 
-    tan(param[0] * NN_THETA) * (x + param[1]) + param[2]));
+  //return MIN(1.0, MAX(-1.0, 
+  //  tan(param[0] * NN_THETA) * (x + param[1]) + param[2]));
+  return tan(param[0] * NN_THETA) * (x + param[1]) + param[2];
 }
 
 // ----- NeuraNet

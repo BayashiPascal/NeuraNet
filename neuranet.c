@@ -145,7 +145,7 @@ void NNEval(const NeuraNet* const that, const VecFloat* const input, VecFloat* c
         // link
         if (prevLink[1] < startOut) {
           int iVal = prevLink[1] - startHid;
-          float nVal = VecGet(that->_hidVal, iVal) + prevOut;
+          float nVal = MIN(1.0, MAX(-1.0, VecGet(that->_hidVal, iVal) + prevOut));
           VecSet(that->_hidVal, iVal, nVal);
         } else { 
           int iVal = prevLink[1] - startOut;
@@ -175,7 +175,7 @@ void NNEval(const NeuraNet* const that, const VecFloat* const input, VecFloat* c
     // Update the output of the last link
     if (prevLink[1] < startOut) {
       int iVal = prevLink[1] - startHid;
-      float nVal = VecGet(that->_hidVal, iVal) + prevOut;
+      float nVal = MIN(1.0, MAX(-1.0, VecGet(that->_hidVal, iVal) + prevOut));
       VecSet(that->_hidVal, iVal, nVal);
     } else { 
       int iVal = prevLink[1] - startOut;
