@@ -206,16 +206,7 @@ float Evaluate(const NeuraNet* const that,
         dataset->_samples[iSample]._props[iInp]);
     }
     NNEval(that, input, output);
-    int pred = -1;
-    if (VecGet(output, 0) > VecGet(output, 1) && 
-      VecGet(output, 0) > VecGet(output, 2))
-      pred = 0;
-    else if (VecGet(output, 1) > VecGet(output, 0) && 
-      VecGet(output, 1) > VecGet(output, 2))
-      pred = 1;
-    else if (VecGet(output, 2) > VecGet(output, 1) && 
-      VecGet(output, 2) > VecGet(output, 0))
-      pred = 2;
+    int pred = VecGetIMaxVal(output);
     if (dataset->_cat == datatest) {
       printf("#%d pred%d real%d ", iSample, pred, 
         dataset->_samples[iSample]._cat);
@@ -259,6 +250,10 @@ NeuraNet* createNN(void) {
 void Learn(DataSetCat cat) {
   // Init the random generator
   srandom(time(NULL));
+  // Declare variables to measure time
+  struct timespec start, stop;
+  // Start measuring time
+  clock_gettime(CLOCK_REALTIME, &start);
   // Load the DataSet
   DataSet* dataset = PBErrMalloc(NeuraNetErr, sizeof(DataSet));
   bool ret = DataSetLoad(dataset, cat);
@@ -327,9 +322,9 @@ void Learn(DataSetCat cat) {
       if (value > curBest)
         curBest = value;
       // Display infos about the current epoch
-      //printf("ep%lu ent%3d(age%6lu) val%.4f bestEpo%.4f bestAll%.4f         \r",
-      //  GAGetCurEpoch(ga), iEnt, GAAdnGetAge(adn), value, curBest,
-      //  bestVal);
+      //printf("ep%lu ent%3d(age%6lu) val%.4f bestEpo%.4f  bestAll%.4f         \r",
+        //GAGetCurEpoch(ga), iEnt, GAAdnGetAge(adn), value, curBest,
+        //bestVal);
       fflush(stdout);
     }
     // Step the GenAlg
@@ -337,9 +332,19 @@ void Learn(DataSetCat cat) {
     // If there has been improvement during this epoch
     if (curBest > bestVal) {
       bestVal = curBest;
+      // Measure time
+      clock_gettime(CLOCK_REALTIME, &stop);
+      float elapsed = stop.tv_sec - start.tv_sec;
+      int day = (int)floor(elapsed / 86400);
+      elapsed -= (float)(day * 86400);
+      int hour = (int)floor(elapsed / 3600);
+      elapsed -= (float)(hour * 3600);
+      int min = (int)floor(elapsed / 60);
+      elapsed -= (float)(min * 60);
+      int sec = (int)floor(elapsed);
       // Display info about the improvment
-      printf("\nImprovement at epoch %lu: %f\n", 
-        GAGetCurEpoch(ga), bestVal);
+      printf("Improvement at epoch %lu: %f (in %d:%d:%d:%ds)  \n", 
+        GAGetCurEpoch(ga), bestVal, day, hour, min, sec);
       fflush(stdout);
       // Set the links and base functions of the NeuraNet according
       // to the best adn
@@ -374,7 +379,18 @@ void Learn(DataSetCat cat) {
     int ret = system("mv ./bestga.tmp ./bestga.txt");
     (void)ret;
   }
-  printf("\nLearning complete\n");
+  // Measure time
+  clock_gettime(CLOCK_REALTIME, &stop);
+  float elapsed = stop.tv_sec - start.tv_sec;
+  int day = (int)floor(elapsed / 86400);
+  elapsed -= (float)(day * 86400);
+  int hour = (int)floor(elapsed / 3600);
+  elapsed -= (float)(hour * 3600);
+  int min = (int)floor(elapsed / 60);
+  elapsed -= (float)(min * 60);
+  int sec = (int)floor(elapsed);
+  printf("\nLearning complete (in %d:%d:%d:%ds)\n", 
+    day, hour, min, sec);
   // Free memory
   NeuraNetFree(&nn);
   GenAlgFree(&ga);
@@ -402,6 +418,8 @@ void Validate(const NeuraNet* const that, const DataSetCat cat) {
 // 'nbInp' char*)
 void Predict(const NeuraNet* const that, const int nbInp, 
   char** const inputs) {
+  // Start measuring time
+  clock_t clockStart = clock();
   // Check the number of inputs
   if (nbInp != NNGetNbInput(that)) {
     printf("Wrong number of inputs, there should %d, there was %d\n",
@@ -429,7 +447,14 @@ void Predict(const NeuraNet* const that, const int nbInp,
   else if (VecGet(output, 2) > VecGet(output, 1) && 
     VecGet(output, 2) > VecGet(output, 0))
     pred = 2;
-  printf("Prediction: %s\n", irisCatNames[pred]);
+  // End measuring time
+  clock_t clockEnd = clock();
+  double timeUsed = 
+    ((double)(clockEnd - clockStart)) / (CLOCKS_PER_SEC * 0.001) ;
+  // If the clock has been reset meanwhile
+  if (timeUsed < 0.0)
+    timeUsed = 0.0;
+  printf("Prediction: %s (in %fms)\n", irisCatNames[pred], timeUsed);
   
   // Free memory
   VecFree(&input);
