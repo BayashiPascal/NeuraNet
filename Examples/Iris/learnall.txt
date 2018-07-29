@@ -1,12 +1,30 @@
 Learning...
-Will stop when curEpoch >= 1000 or bestVal >= 0.999000
-Improvement at epoch 1: 0.666667 (in 0:0:0:0s)  
-Saved the best NeuraNet in ./bestnn.txt
-Improvement at epoch 6: 0.833333 (in 0:0:0:1s)  
-Saved the best NeuraNet in ./bestnn.txt
-Improvement at epoch 98: 0.880000 (in 0:0:0:4s)  
-Saved the best NeuraNet in ./bestnn.txt
-Improvement at epoch 158: 0.960000 (in 0:0:0:6s)  
-Saved the best NeuraNet in ./bestnn.txt
+Will stop when curEpoch >= 2000 or bestVal >= 0.999000
+Will save the best NeuraNet in ./bestnn.txt at each improvement
+Improvement at epoch 1: 0.333333 (in 0:0:0:0s)  
+Improvement at epoch 3: 0.340000 (in 0:0:0:0s)  
+Improvement at epoch 8: 0.653333 (in 0:0:0:1s)  
+Improvement at epoch 13: 0.666667 (in 0:0:0:1s)  
+Set nb of bases and links to 2 and 2 at epoch 63
+Set nb of bases and links to 3 and 3 at epoch 113
+Set nb of bases and links to 4 and 4 at epoch 163
+Set nb of bases and links to 5 and 5 at epoch 213
+Set nb of bases and links to 6 and 6 at epoch 263
+Improvement at epoch 283: 0.946667 (in 0:0:0:6s)  
+Set nb of bases and links to 7 and 7 at epoch 333
+Set nb of bases and links to 8 and 8 at epoch 383
+Improvement at epoch 395: 0.960000 (in 0:0:0:8s)  
+Set nb of bases and links to 9 and 9 at epoch 445
+Set nb of bases and links to 10 and 10 at epoch 495
+Set nb of bases and links to 11 and 11 at epoch 545
+Set nb of bases and links to 12 and 12 at epoch 595
+Set nb of bases and links to 13 and 13 at epoch 645
+Set nb of bases and links to 14 and 14 at epoch 695
+Set nb of bases and links to 15 and 15 at epoch 745
+Set nb of bases and links to 16 and 16 at epoch 795
+Set nb of bases and links to 17 and 17 at epoch 845
+Set nb of bases and links to 18 and 18 at epoch 895
+Set nb of bases and links to 19 and 19 at epoch 945
+Set nb of bases and links to 20 and 20 at epoch 995
 
-Learning complete (in 0:0:0:36s)
+Learning complete (in 0:0:0:50s)
