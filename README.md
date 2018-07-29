@@ -10,5 +10,5 @@ The generic base functions is a linear function. However by using several links 
 NeuraNet provides functions to easily use the library GenAlg to search the values of base functions and links' parameters. An example is given in the unit tests (see below). It also provides functions to save and load the neural network (in JSON format).
 
 NeuraNet has been validated on 
-* the Iris data set: 97.3% correct classification in 11s (https://archive.ics.uci.edu/ml/datasets/iris)
+* the Iris data set: 94.6% correct classification in 11s (https://archive.ics.uci.edu/ml/datasets/iris)
 * the Abalone data set : 23.9% correct classification, 60.9% +-1 error, 80.4% +-2, 88.9% +-3, 92.7% +-4, 95% +-5, 97% +-6, 98.4% +-7, 99.1% +-8, 99.5% +-9, 99.8% +-10, in 2h:22m:27s (http://www.cs.toronto.edu/~delve/data/abalone/desc.html)
