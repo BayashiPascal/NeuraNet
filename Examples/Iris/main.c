@@ -30,9 +30,6 @@
 #define STOP_LEARNING_AT_EPOCH 2000
 // Save NeuraNet in compact format
 #define COMPACT true
-// Delay in epochs without improvement during learning above which 
-// we increase the number of explored bases and links
-#define THRESHOLD_DELAY_WITHOUT_IMPROV 50
 
 // Categories of data sets
 
@@ -249,7 +246,7 @@ NeuraNet* createNN(void) {
   return nn;
 }
 
-// Learn based on the SataSetCat 'cat'
+// Learn based on the DataSetCat 'cat'
 void Learn(DataSetCat cat) {
   // Init the random generator
   srandom(time(NULL));
@@ -294,6 +291,7 @@ void Learn(DataSetCat cat) {
   } else {
     ga = GenAlgCreate(ADN_SIZE_POOL, ADN_SIZE_ELITE, 
       NNGetGAAdnFloatLength(nn), NNGetGAAdnIntLength(nn));
+    GASetTypeNeuraNet(ga, NB_INPUT, NB_MAXHIDDEN, NB_OUTPUT);
     NNSetGABoundsBases(nn, ga);
     NNSetGABoundsLinks(nn, ga);
     GAInit(ga);
@@ -313,12 +311,6 @@ void Learn(DataSetCat cat) {
     limitEpoch, STOP_LEARNING_AT_VAL);
   printf("Will save the best NeuraNet in ./bestnn.txt at each improvement\n");
   fflush(stdout);
-  // Declare two variables to memorize the number of bases and links
-  // currenlty explored by the GenAlg
-  int nbBase = 1;
-  int nbLink = 1; 
-  // Declare a variable to memorize the delay without improvement
-  int delayWithoutImprov = 0;
   // Declare a variable to memorize the best value in the current epoch
   float curBest = bestVal;
   while (bestVal < STOP_LEARNING_AT_VAL && 
@@ -346,13 +338,7 @@ void Learn(DataSetCat cat) {
         //bestVal);
       //fflush(stdout);
     }
-    // Step the GenAlg
-    if (nbBase < NB_MAXBASE && nbLink < NB_MAXLINK) {
-      GAStepSubset(ga, 
-        nbBase * NN_NBPARAMBASE, nbLink * NN_NBPARAMLINK);
-    } else {
-      GAStep(ga);
-    }
+    GAStep(ga);
     // If there has been improvement during this epoch
     if (curBest > bestVal) {
       bestVal = curBest;
@@ -386,22 +372,6 @@ void Learn(DataSetCat cat) {
         return;
       }
       fclose(fd);
-      // Reset the delay without improvement
-      delayWithoutImprov = 0;
-    } else {
-      // Increase the delay without improvement
-      ++delayWithoutImprov;
-    }
-    // If we have been a long time without improvement
-    if (delayWithoutImprov >= THRESHOLD_DELAY_WITHOUT_IMPROV &&
-      nbBase < NB_MAXBASE && nbLink < NB_MAXLINK) {
-      ++nbBase;
-      ++nbLink;
-      printf("Set nb of bases and links to %d and %d at epoch %lu\n",
-        nbBase, nbLink, GAGetCurEpoch(ga));
-      fflush(stdout);
-      // Reset the delay without improvement
-      delayWithoutImprov = 0;
     }
     // Save the adns of the GenAlg, use a temporary file to avoid
     // loosing the previous one if something goes wrong during
@@ -551,4 +521,3 @@ int main(int argc, char** argv) {
   // Return success code
   return 0;
 }
-

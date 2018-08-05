@@ -1,32 +1,7 @@
+Previous GenAlg reloaded.
+Starting with best at 0.986667.
 Learning...
-Will stop when curEpoch >= 2000 or bestVal >= 0.999000
+Will stop when curEpoch >= 4000 or bestVal >= 0.999000
 Will save the best NeuraNet in ./bestnn.txt at each improvement
-Improvement at epoch 1: 0.333333 (in 0:0:0:0s)  
-Improvement at epoch 11: 0.666667 (in 0:0:0:0s)  
-Set nb of bases and links to 2 and 2 at epoch 61
-Set nb of bases and links to 3 and 3 at epoch 111
-Set nb of bases and links to 4 and 4 at epoch 161
-Set nb of bases and links to 5 and 5 at epoch 211
-Set nb of bases and links to 6 and 6 at epoch 261
-Set nb of bases and links to 7 and 7 at epoch 311
-Improvement at epoch 345: 0.706667 (in 0:0:0:7s)  
-Improvement at epoch 387: 0.720000 (in 0:0:0:8s)  
-Set nb of bases and links to 8 and 8 at epoch 437
-Improvement at epoch 444: 0.813333 (in 0:0:0:9s)  
-Set nb of bases and links to 9 and 9 at epoch 494
-Improvement at epoch 513: 0.853333 (in 0:0:0:10s)  
-Improvement at epoch 528: 0.960000 (in 0:0:0:10s)  
-Improvement at epoch 539: 0.973333 (in 0:0:0:11s)  
-Set nb of bases and links to 10 and 10 at epoch 589
-Set nb of bases and links to 11 and 11 at epoch 639
-Set nb of bases and links to 12 and 12 at epoch 689
-Set nb of bases and links to 13 and 13 at epoch 739
-Set nb of bases and links to 14 and 14 at epoch 789
-Set nb of bases and links to 15 and 15 at epoch 839
-Set nb of bases and links to 16 and 16 at epoch 889
-Set nb of bases and links to 17 and 17 at epoch 939
-Set nb of bases and links to 18 and 18 at epoch 989
-Set nb of bases and links to 19 and 19 at epoch 1039
-Set nb of bases and links to 20 and 20 at epoch 1089
 
-Learning complete (in 0:0:0:44s)
+Learning complete (in 0:0:0:52s)
