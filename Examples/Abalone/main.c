@@ -27,12 +27,9 @@
 // Value of the NeuraNet above which the learning process stops
 #define STOP_LEARNING_AT_VAL -0.01
 // Number of epoch above which the learning process stops
-#define STOP_LEARNING_AT_EPOCH 100000
+#define STOP_LEARNING_AT_EPOCH 500
 // Save NeuraNet in compact format
 #define COMPACT true
-// Delay in epochs without improvement during learning above which 
-// we increase the number of explored bases and links
-#define THRESHOLD_DELAY_WITHOUT_IMPROV 100
 
 // Categories of data sets
 
@@ -274,22 +271,20 @@ float Evaluate(const NeuraNet* const that,
     float pred = VecGet(output, 0);
     float age = dataset->_samples[iSample]._age + 0.5;
     float v = fabs(pred - age);
-    //v *= dataset->_weights[(int)round(age) - 1];
     val -= v;
-    if (dataset->_cat == datatest) {
-      //printf("#%d pred %f real %f \n", iSample, pred, age);
+    if (dataset->_cat != datalearn) {
       int iErr = (int)round(v);
       ++(count[iErr]);
     }
 
   }
   val /= (float)(dataset->_nbSample);
-  if (dataset->_cat == datatest) {
+  if (dataset->_cat != datalearn) {
     float perc = 0.0;
     printf("age_err count cumul_perc\n");
     for (int iErr = 0; iErr < 29; ++ iErr) {
       perc += (float)(count[iErr]) / (float)(dataset->_nbSample);
-      printf("%2d %3d %f\n", iErr, count[iErr], perc);
+      printf("%2d %4d %f\n", iErr, count[iErr], perc);
     }
   }
 
@@ -315,7 +310,7 @@ NeuraNet* createNN(void) {
   return nn;
 }
 
-// Learn based on the SataSetCat 'cat'
+// Learn based on the DataSetCat 'cat'
 void Learn(DataSetCat cat) {
   // Init the random generator
   srandom(time(NULL));
@@ -360,6 +355,7 @@ void Learn(DataSetCat cat) {
   } else {
     ga = GenAlgCreate(ADN_SIZE_POOL, ADN_SIZE_ELITE, 
       NNGetGAAdnFloatLength(nn), NNGetGAAdnIntLength(nn));
+    GASetTypeNeuraNet(ga, NB_INPUT, NB_MAXHIDDEN, NB_OUTPUT);
     NNSetGABoundsBases(nn, ga);
     NNSetGABoundsLinks(nn, ga);
     GAInit(ga);
@@ -375,14 +371,8 @@ void Learn(DataSetCat cat) {
   printf("Learning...\n");
   printf("Will stop when curEpoch >= %lu or bestVal >= %f\n",
     limitEpoch, STOP_LEARNING_AT_VAL);
-  printf("Will save the best NeuraNet in ./bestnn.txt at each improvement\n");
+  printf("Best NeuraNet saved in ./bestnn.txt at each improvement\n");
   fflush(stdout);
-  // Declare two variables to memorize the number of bases and links
-  // currenlty explored by the GenAlg
-  int nbBase = 1;
-  int nbLink = 1; 
-  // Declare a variable to memorize the delay without improvement
-  int delayWithoutImprov = 0;
   // Declare a variable to memorize the best value in the current epoch
   float curBest = bestVal;
   while (bestVal < STOP_LEARNING_AT_VAL && 
@@ -411,12 +401,7 @@ void Learn(DataSetCat cat) {
       //fflush(stdout);
     }
     // Step the GenAlg
-    if (nbBase < NB_MAXBASE && nbLink < NB_MAXLINK) {
-      GAStepSubset(ga, 
-        nbBase * NN_NBPARAMBASE, nbLink * NN_NBPARAMLINK);
-    } else {
-      GAStep(ga);
-    }
+    GAStep(ga);
     // If there has been improvement during this epoch
     if (curBest > bestVal) {
       bestVal = curBest;
@@ -450,22 +435,6 @@ void Learn(DataSetCat cat) {
         return;
       }
       fclose(fd);
-      // Reset the delay without improvement
-      delayWithoutImprov = 0;
-    } else {
-      // Increase the delay without improvement
-      ++delayWithoutImprov;
-    }
-    // If we have been a long time without improvement
-    if (delayWithoutImprov >= THRESHOLD_DELAY_WITHOUT_IMPROV &&
-      nbBase < NB_MAXBASE && nbLink < NB_MAXLINK) {
-      ++nbBase;
-      ++nbLink;
-      printf("Set nb of bases and links to %d and %d at epoch %lu\n",
-        nbBase, nbLink, GAGetCurEpoch(ga));
-      fflush(stdout);
-      // Reset the delay without improvement
-      delayWithoutImprov = 0;
     }
     // Save the adns of the GenAlg, use a temporary file to avoid
     // loosing the previous one if something goes wrong during
