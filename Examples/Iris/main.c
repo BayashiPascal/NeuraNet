@@ -11,6 +11,11 @@
 
 // https://archive.ics.uci.edu/ml/datasets/iris
 
+// Nb of step between each save of the GenAlg
+// Saving it allows to restart a stop learning process but is 
+// very time consuming if there are many input/hidden/output
+// If 0 never save
+#define SAVE_GA_EVERY 0
 // Nb input and output of the NeuraNet
 #define NB_INPUT 4
 #define NB_OUTPUT 3
@@ -272,6 +277,7 @@ void Learn(DataSetCat cat) {
   GenAlg* ga = NULL;
   FILE* fd = fopen("./bestga.txt", "r");
   if (fd) {
+    printf("Reloading previous GenAlg...\n");
     if (!GALoad(&ga, fd)) {
       printf("Failed to reload the GenAlg.\n");
       NeuraNetFree(&nn);
@@ -313,6 +319,8 @@ void Learn(DataSetCat cat) {
   fflush(stdout);
   // Declare a variable to memorize the best value in the current epoch
   float curBest = bestVal;
+  // Declare a variable to manage the save of GenAlg
+  int delaySave = 0;
   while (bestVal < STOP_LEARNING_AT_VAL && 
     GAGetCurEpoch(ga) < limitEpoch) {
     // For each adn in the GenAlg
@@ -339,19 +347,19 @@ void Learn(DataSetCat cat) {
       //fflush(stdout);
     }
     GAStep(ga);
+    // Measure time
+    clock_gettime(CLOCK_REALTIME, &stop);
+    float elapsed = stop.tv_sec - start.tv_sec;
+    int day = (int)floor(elapsed / 86400);
+    elapsed -= (float)(day * 86400);
+    int hour = (int)floor(elapsed / 3600);
+    elapsed -= (float)(hour * 3600);
+    int min = (int)floor(elapsed / 60);
+    elapsed -= (float)(min * 60);
+    int sec = (int)floor(elapsed);
     // If there has been improvement during this epoch
     if (curBest > bestVal) {
       bestVal = curBest;
-      // Measure time
-      clock_gettime(CLOCK_REALTIME, &stop);
-      float elapsed = stop.tv_sec - start.tv_sec;
-      int day = (int)floor(elapsed / 86400);
-      elapsed -= (float)(day * 86400);
-      int hour = (int)floor(elapsed / 3600);
-      elapsed -= (float)(hour * 3600);
-      int min = (int)floor(elapsed / 60);
-      elapsed -= (float)(min * 60);
-      int sec = (int)floor(elapsed);
       // Display info about the improvment
       printf("Improvement at epoch %lu: %f (in %d:%d:%d:%ds)  \n", 
         GAGetCurEpoch(ga), bestVal, day, hour, min, sec);
@@ -372,21 +380,29 @@ void Learn(DataSetCat cat) {
         return;
       }
       fclose(fd);
+    } else {
+      printf("epoch %lu (in %d:%d:%d:%ds)     \r", 
+        GAGetCurEpoch(ga), day, hour, min, sec);
+      fflush(stdout);
     }
-    // Save the adns of the GenAlg, use a temporary file to avoid
-    // loosing the previous one if something goes wrong during
-    // writing, then replace the previous file with the temporary one
-    fd = fopen("./bestga.tmp", "w");
-    if (!GASave(ga, fd, COMPACT)) {
-      printf("Couldn't save the GenAlg\n");
-      NeuraNetFree(&nn);
-      GenAlgFree(&ga);
-      DataSetFree(&dataset);
-      return;
+    ++delaySave;
+    if (SAVE_GA_EVERY != 0 && delaySave >= SAVE_GA_EVERY) {
+      delaySave = 0;
+      // Save the adns of the GenAlg, use a temporary file to avoid
+      // loosing the previous one if something goes wrong during
+      // writing, then replace the previous file with the temporary one
+      fd = fopen("./bestga.tmp", "w");
+      if (!GASave(ga, fd, COMPACT)) {
+        printf("Couldn't save the GenAlg\n");
+        NeuraNetFree(&nn);
+        GenAlgFree(&ga);
+        DataSetFree(&dataset);
+        return;
+      }
+      fclose(fd);
+      int ret = system("mv ./bestga.tmp ./bestga.txt");
+      (void)ret;
     }
-    fclose(fd);
-    int ret = system("mv ./bestga.tmp ./bestga.txt");
-    (void)ret;
   }
   // Measure time
   clock_gettime(CLOCK_REALTIME, &stop);
