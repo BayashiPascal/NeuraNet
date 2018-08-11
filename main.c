@@ -294,8 +294,8 @@ float evaluate(const NeuraNet* const nn) {
 }
 
 void UnitTestNeuraNetGA() {
-  srandom(RANDOMSEED);
-  //srandom(time(NULL));
+  //srandom(RANDOMSEED);
+  srandom(time(NULL));
   int nbIn = 3;
   int nbOut = 3;
   int nbHid = 3;
@@ -306,7 +306,7 @@ void UnitTestNeuraNetGA() {
     NNGetGAAdnFloatLength(nn), NNGetGAAdnIntLength(nn));
   NNSetGABoundsBases(nn, ga);
   NNSetGABoundsLinks(nn, ga);
-  // Must be declared as a GenAlgapplied to a NeuraNet or links will
+  // Must be declared as a GenAlg applied to a NeuraNet or links will
   // get corrupted
   GASetTypeNeuraNet(ga, nbIn, nbHid, nbOut);
   GAInit(ga);
@@ -374,8 +374,8 @@ void UnitTestAll() {
 }
 
 int main() {
-  UnitTestAll();
-  //UnitTestNeuraNetGA();
+  //UnitTestAll();
+  UnitTestNeuraNetGA();
   // Return success code
   return 0;
 }

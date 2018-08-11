@@ -391,7 +391,7 @@ void NNPrintln(const NeuraNet* const that, FILE* const stream) {
 // sorted
 // Each link is defined by (base index, input index, output index)
 // If base index equals -1 it means the link is inactive
-void NNSetLinks(NeuraNet* const that, const VecShort* const links) {
+void NNSetLinks(NeuraNet* const that, VecShort* const links) {
 #if BUILDMODE == 0
   if (that == NULL) {
     NeuraNetErr->_type = PBErrTypeNullPointer;
@@ -459,6 +459,9 @@ void NNSetLinks(NeuraNet* const that, const VecShort* const links) {
   // Reset the inactive links
   for (int iLink = nbLink; iLink < NNGetNbMaxLinks(that); ++iLink)
     VecSet(that->_links, iLink * NN_NBPARAMLINK, -1);
+  // Correct the links definition in the GenAlg to improve
+  // diversity calculation
+  VecCopy(links, that->_links);
   // Free the memory
   GSetFlush(&set);
 }

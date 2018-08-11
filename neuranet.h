@@ -154,7 +154,7 @@ void NNBasesSet(NeuraNet* const that, const int iBase, const float base);
 // sorted
 // Each link is defined by (base index, input index, output index)
 // If base index equals -1 it means the link is inactive
-void NNSetLinks(NeuraNet* const that, const VecShort* const links);
+void NNSetLinks(NeuraNet* const that, VecShort* const links);
 
 // Calculate the output values for the input values 'input' for the 
 // NeuraNet 'that' and memorize the result in 'output'
