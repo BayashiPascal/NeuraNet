@@ -14,8 +14,8 @@
 // Create a new NeuraNet with 'nbInput' input values, 'nbOutput' 
 // output values, 'nbMaxHidden' hidden values, 'nbMaxBases' base 
 // functions, 'nbMaxLinks' links
-NeuraNet* NeuraNetCreate(const int nbInput, const int nbOutput, const int nbMaxHidden, 
-  const int nbMaxBases, const int nbMaxLinks) {
+NeuraNet* NeuraNetCreate(const int nbInput, const int nbOutput, 
+  const int nbMaxHidden, const int nbMaxBases, const int nbMaxLinks) {
 #if BUILDMODE == 0
   if (nbInput <= 0) {
     NeuraNetErr->_type = PBErrTypeInvalidArg;
@@ -76,6 +76,95 @@ void NeuraNetFree(NeuraNet** that) {
   VecFree(&((*that)->_hidVal));
   free(*that);
   *that = NULL;
+}
+
+// Create a new NeuraNet with 'nbIn' innput values, 'nbOut' 
+// output values and a set of hidden layers described by 
+// 'hiddenLayers' as follow:
+// The dimension of 'hiddenLayers' is the number of hidden layers
+// and each component of 'hiddenLayers' is the number of hidden value 
+// in the corresponding hidden layer
+// For example, <3,4> means 2 hidden layers, the first one with 3 
+// hidden values and the second one with 4 hidden values
+// If 'hiddenValues' is null it means there is no hidden layers
+// Then, links are automatically added between each input values 
+// toward each hidden values in the first hidden layer, then from each 
+// hidden values of the first hidden layer to each hidden value of the 
+// 2nd hidden layer and so on until each values of the output
+NeuraNet* NeuraNetCreateFullyConnected(const int nbIn, const int nbOut, 
+  const VecShort* const hiddenLayers) {
+#if BUILDMODE == 0
+  if (nbIn <= 0) {
+    NeuraNetErr->_type = PBErrTypeInvalidArg;
+    sprintf(NeuraNetErr->_msg, "'nbInput' is invalid (0<%d)", nbIn);
+    PBErrCatch(NeuraNetErr);
+  }
+  if (nbOut <= 0) {
+    NeuraNetErr->_type = PBErrTypeInvalidArg;
+    sprintf(NeuraNetErr->_msg, "'nbOutput' is invalid (0<%d)", nbOut);
+    PBErrCatch(NeuraNetErr);
+  }
+#endif
+  // Declare variable to memorize the number of links, bases 
+  // and hidden values
+  int nbHiddenVal = 0;
+  int nbBases = 0;
+  int nbLinks = 0;
+  int nbHiddenLayer = 0;
+  // If there are hidden layers
+  if (hiddenLayers != NULL) {
+    // Get the number of hidden layers
+    nbHiddenLayer = VecGetDim(hiddenLayers);
+    // Declare two variables for computation
+    int nIn = nbIn;
+    int nOut = 0;
+    // Calculate the nb of links and hidden values
+    for (int iLayer = 0; iLayer < nbHiddenLayer; ++iLayer) {
+      nOut = VecGet(hiddenLayers, iLayer);
+      nbHiddenVal += nOut;
+      nbLinks += nIn * nOut;
+      nIn = nOut;
+    }
+    nbLinks += nIn * nbOut;
+  // Else, there is no hidden layers
+  } else {
+    // Set the number of links
+    nbLinks = nbIn * nbOut;
+  }
+  // There is one base function per link
+  nbBases = nbLinks;
+  // Create the NeuraNet
+  NeuraNet* nn = 
+    NeuraNetCreate(nbIn, nbOut, nbHiddenVal, nbBases, nbLinks);
+  // Declare a variable to memorize the index of the link
+  int iLink = 0;
+  // Declare variables for computation
+  int shiftIn = 0;
+  int shiftOut = nbIn;
+  int nIn = nbIn;
+  int nOut = 0;
+  // Loop on hidden layers
+  for (int iLayer = 0; iLayer <= nbHiddenLayer; ++iLayer) {
+    // Init the links
+    if (iLayer < nbHiddenLayer)
+      nOut = VecGet(hiddenLayers, iLayer);
+    else
+      nOut = nbOut;
+    for (int iIn = 0; iIn < nIn; ++iIn) {
+      for (int iOut = 0; iOut < nOut; ++iOut) {
+        int jLink = NN_NBPARAMLINK * iLink;
+        VecSet(nn->_links, jLink, iLink);
+        VecSet(nn->_links, jLink + 1, iIn + shiftIn);
+        VecSet(nn->_links, jLink + 2, iOut + shiftOut);
+        ++iLink;
+      }
+    }
+    shiftIn = shiftOut;
+    shiftOut += nOut;
+    nIn = nOut;
+  }
+  // Return the new NeuraNet
+  return nn;
 }
 
 // Calculate the output values for the input values 'input' for the 

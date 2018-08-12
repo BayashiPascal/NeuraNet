@@ -75,6 +75,22 @@ NeuraNet* NeuraNetCreate(const int nbInput, const int nbOutput,
 // Free the memory used by the NeuraNet 'that'
 void NeuraNetFree(NeuraNet** that);
 
+// Create a new NeuraNet with 'nbInput' input values, 'nbOutput' 
+// output values and a set of hidden layers described by 
+// 'hiddenLayers' as follow:
+// The dimension of 'hiddenLayers' is the number of hidden layers
+// and each component of 'hiddenLayers' is the number of hidden value 
+// in the corresponding hidden layer
+// For example, <3,4> means 2 hidden layers, the first one with 3 
+// hidden values and the second one with 4 hidden values
+// If 'hiddenValues' is null it means there is no hidden layers
+// Then, links are automatically added between each input values 
+// toward each hidden values in the first hidden layer, then from each 
+// hidden values of the first hidden layer to each hidden value of the 
+// 2nd hidden layer and so on until each values of the output
+NeuraNet* NeuraNetCreateFullyConnected(const int nbIn, const int nbOut, 
+  const VecShort* const hiddenLayers);
+  
 // Get the nb of input values of the NeuraNet 'that'
 #if BUILDMODE != 0
 inline

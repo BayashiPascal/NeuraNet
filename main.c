@@ -81,6 +81,79 @@ void UnitTestNeuraNetCreateFree() {
   printf("UnitTestNeuraNetCreateFree OK\n");
 }
 
+void UnitTestNeuraNetCreateFullyConnected() {
+  int nbIn = 2;
+  int nbOut = 3;
+  VecShort* hiddenLayers = NULL;
+  NeuraNet* nn = NeuraNetCreateFullyConnected(nbIn, nbOut, hiddenLayers);
+  if (nn == NULL ||
+    nn->_nbInputVal != nbIn ||
+    nn->_nbOutputVal != nbOut ||
+    nn->_nbMaxHidVal != 0 ||
+    nn->_nbMaxBases != 6 ||
+    nn->_nbMaxLinks != 6 ||
+    nn->_bases == NULL ||
+    nn->_links == NULL ||
+    nn->_hidVal != NULL) {
+    NeuraNetErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(NeuraNetErr->_msg, "NeuraNetCreateFullyConnected failed");
+    PBErrCatch(NeuraNetErr);
+  }
+  int checka[18] = {
+    0,0,2, 1,0,3, 2,0,4,
+    3,1,2, 4,1,3, 5,1,4
+  };
+  for (int i = 18; i--;)
+    if (VecGet(nn->_links, i) != checka[i]) {
+      NeuraNetErr->_type = PBErrTypeUnitTestFailed;
+      sprintf(NeuraNetErr->_msg, "NeuraNetCreateFullyConnected failed");
+      PBErrCatch(NeuraNetErr);
+    }
+  NeuraNetFree(&nn);
+  nbIn = 5;
+  nbOut = 2;
+  hiddenLayers = VecShortCreate(2);
+  VecSet(hiddenLayers, 0, 4);
+  VecSet(hiddenLayers, 1, 3);
+  nn = NeuraNetCreateFullyConnected(nbIn, nbOut, hiddenLayers);
+  if (nn == NULL ||
+    nn->_nbInputVal != nbIn ||
+    nn->_nbOutputVal != nbOut ||
+    nn->_nbMaxHidVal != 7 ||
+    nn->_nbMaxBases != 38 ||
+    nn->_nbMaxLinks != 38 ||
+    nn->_bases == NULL ||
+    nn->_links == NULL ||
+    nn->_hidVal == NULL) {
+    NeuraNetErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(NeuraNetErr->_msg, "NeuraNetCreateFullyConnected failed");
+    PBErrCatch(NeuraNetErr);
+  }
+  int checkb[114] = {
+    0,0,5, 1,0,6, 2,0,7, 3,0,8, 
+    4,1,5, 5,1,6, 6,1,7, 7,1,8, 
+    8,2,5, 9,2,6, 10,2,7, 11,2,8,
+    12,3,5, 13,3,6, 14,3,7, 15,3,8,
+    16,4,5, 17,4,6, 18,4,7, 19,4,8,
+    20,5,9, 21,5,10, 22,5,11, 
+    23,6,9, 24,6,10, 25,6,11,
+    26,7,9, 27,7,10, 28,7,11,
+    29,8,9, 30,8,10, 31,8,11,
+    32,9,12, 33,9,13,
+    34,10,12, 35,10,13,
+    36,11,12, 37,11,13
+  };
+  for (int i = 114; i--;)
+    if (VecGet(nn->_links, i) != checkb[i]) {
+      NeuraNetErr->_type = PBErrTypeUnitTestFailed;
+      sprintf(NeuraNetErr->_msg, "NeuraNetCreateFullyConnected failed");
+      PBErrCatch(NeuraNetErr);
+    }
+  NeuraNetFree(&nn);
+  VecFree(&hiddenLayers);
+  printf("UnitTestNeuraNetCreateFullyConnected OK\n");
+}
+
 void UnitTestNeuraNetGetSet() {
   int nbIn = 10;
   int nbOut = 20;
@@ -357,6 +430,7 @@ void UnitTestNeuraNetGA() {
 
 void UnitTestNeuraNet() {
   UnitTestNeuraNetCreateFree();
+  UnitTestNeuraNetCreateFullyConnected();
   UnitTestNeuraNetGetSet();
   UnitTestNeuraNetSaveLoad();
   UnitTestNeuraNetEvalPrint();
@@ -374,8 +448,7 @@ void UnitTestAll() {
 }
 
 int main() {
-  //UnitTestAll();
-  UnitTestNeuraNetGA();
+  UnitTestAll();
   // Return success code
   return 0;
 }
