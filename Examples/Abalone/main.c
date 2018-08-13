@@ -315,7 +315,7 @@ NeuraNet* createNN(void) {
   return nn;
 }
 
-// Learn based on the DataSetCat 'cat'
+// Learn based on the SataSetCat 'cat'
 void Learn(DataSetCat cat) {
   // Init the random generator
   srandom(time(NULL));
@@ -361,34 +361,29 @@ void Learn(DataSetCat cat) {
   } else {
     ga = GenAlgCreate(ADN_SIZE_POOL, ADN_SIZE_ELITE, 
       NNGetGAAdnFloatLength(nn), NNGetGAAdnIntLength(nn));
-    GASetTypeNeuraNet(ga, NB_INPUT, NB_MAXHIDDEN, NB_OUTPUT);
     NNSetGABoundsBases(nn, ga);
     NNSetGABoundsLinks(nn, ga);
+    // Must be declared as a GenAlg applied to a NeuraNet or links will
+    // get corrupted
+    GASetTypeNeuraNet(ga, NB_INPUT, NB_MAXHIDDEN, NB_OUTPUT);
     GAInit(ga);
-    // Init all the links except the first one to deactivated
-    GSetIterForward iter = GSetIterForwardCreateStatic(GAAdns(ga));
-    do {
-      GenAlgAdn* adn = GSetIterGet(&iter);
-      for (int iGene = 3; iGene < VecGetDim(GAAdnAdnI(adn)); iGene += 3)
-        GAAdnSetGeneI(adn, iGene, -1);
-    } while (GSetIterStep(&iter));
   }
   // Start learning process
   printf("Learning...\n");
   printf("Will stop when curEpoch >= %lu or bestVal >= %f\n",
     limitEpoch, STOP_LEARNING_AT_VAL);
-  printf("Best NeuraNet saved in ./bestnn.txt at each improvement\n");
-  if (SAVE_GA_EVERY > 0)
-    printf("Will save GenAlg every %d epochs\n", SAVE_GA_EVERY);
-  else
-    printf("Will not save GenAlg\n");
+  printf("Will save the best NeuraNet in ./bestnn.txt at each improvement\n");
   fflush(stdout);
   // Declare a variable to memorize the best value in the current epoch
   float curBest = bestVal;
   // Declare a variable to manage the save of GenAlg
   int delaySave = 0;
+  // Learning loop
   while (bestVal < STOP_LEARNING_AT_VAL && 
     GAGetCurEpoch(ga) < limitEpoch) {
+    curBest = INIT_BEST_VAL;
+    int curBestI = 0;
+    unsigned long int ageBest = 0;
     // For each adn in the GenAlg
     for (int iEnt = GAGetNbAdns(ga); iEnt--;) {
       // Get the adn
@@ -404,16 +399,12 @@ void Learn(DataSetCat cat) {
       // Update the value of this adn
       GASetAdnValue(ga, adn, value);
       // Update the best value in the current epoch
-      if (value > curBest)
+      if (value > curBest) {
         curBest = value;
-      // Display infos about the current epoch
-      //printf("ep%lu ent%3d(age%6lu) val%.4f bestEpo%.4f bestAll%.4f         \r",
-      //  GAGetCurEpoch(ga), iEnt, GAAdnGetAge(adn), value, curBest,
-      //  bestVal);
-      //fflush(stdout);
+        curBestI = iEnt;
+        ageBest = GAAdnGetAge(adn);
+      }
     }
-    // Step the GenAlg
-    GAStep(ga);
     // Measure time
     clock_gettime(CLOCK_REALTIME, &stop);
     float elapsed = stop.tv_sec - start.tv_sec;
@@ -428,15 +419,16 @@ void Learn(DataSetCat cat) {
     if (curBest > bestVal) {
       bestVal = curBest;
       // Display info about the improvment
-      printf("Improvement at epoch %lu: %f (in %d:%d:%d:%ds)  \n", 
+      printf("Improvement at epoch %05lu: %f (in %02d:%02d:%02d:%02ds)  \n", 
         GAGetCurEpoch(ga), bestVal, day, hour, min, sec);
       fflush(stdout);
       // Set the links and base functions of the NeuraNet according
       // to the best adn
-      if (GABestAdnF(ga) != NULL)
-        NNSetBases(nn, GABestAdnF(ga));
-      if (GABestAdnI(ga) != NULL)
-        NNSetLinks(nn, GABestAdnI(ga));
+      GenAlgAdn* bestAdn = GAAdn(ga, curBestI);
+      if (GAAdnAdnF(bestAdn) != NULL)
+        NNSetBases(nn, GAAdnAdnF(bestAdn));
+      if (GAAdnAdnI(bestAdn) != NULL)
+        NNSetLinks(nn, GAAdnAdnI(bestAdn));
       // Save the best NeuraNet
       fd = fopen("./bestnn.txt", "w");
       if (!NNSave(nn, fd, COMPACT)) {
@@ -448,9 +440,10 @@ void Learn(DataSetCat cat) {
       }
       fclose(fd);
     } else {
-      printf("epoch %lu (in %d:%d:%d:%ds)     \r", 
-        GAGetCurEpoch(ga), day, hour, min, sec);
-      fflush(stdout);
+      fprintf(stderr, 
+        "Epoch %05lu: v%f a%lu (in %02d:%02d:%02d:%02ds)     \r", 
+        GAGetCurEpoch(ga), curBest, ageBest, day, hour, min, sec);
+      fflush(stderr);
     }
     ++delaySave;
     if (SAVE_GA_EVERY != 0 && delaySave >= SAVE_GA_EVERY) {
@@ -470,6 +463,8 @@ void Learn(DataSetCat cat) {
       int ret = system("mv ./bestga.tmp ./bestga.txt");
       (void)ret;
     }
+    // Step the GenAlg
+    GAStep(ga);
   }
   // Measure time
   clock_gettime(CLOCK_REALTIME, &stop);
