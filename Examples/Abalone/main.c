@@ -378,6 +378,10 @@ void Learn(DataSetCat cat) {
   printf("Will stop when curEpoch >= %lu or bestVal >= %f\n",
     limitEpoch, STOP_LEARNING_AT_VAL);
   printf("Best NeuraNet saved in ./bestnn.txt at each improvement\n");
+  if (SAVE_GA_EVERY > 0)
+    printf("Will save GenAlg every %d epochs\n", SAVE_GA_EVERY);
+  else
+    printf("Will not save GenAlg\n");
   fflush(stdout);
   // Declare a variable to memorize the best value in the current epoch
   float curBest = bestVal;
