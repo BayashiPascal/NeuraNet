@@ -385,8 +385,6 @@ void UnitTestNeuraNetGA() {
   GAInit(ga);
   float best = -1000000.0;
   float ev = 0.0;
-  //int nbEpochWithoutImprov = 0;
-  //int nbMaxEpoch = 500;
   do {
     for (int iEnt = GAGetNbAdns(ga); iEnt--;) {
       if (GAAdnIsNew(GAAdn(ga, iEnt))) {
@@ -403,18 +401,8 @@ void UnitTestNeuraNetGA() {
     if (ev > best + PBMATH_EPSILON) {
       best = ev;
       printf("%lu %f\n", GAGetCurEpoch(ga), best);
-//GAEliteSummaryPrintln(ga, stdout);
-//NNPrintln(nn,stdout);
-      //nbEpochWithoutImprov = 0;
-      //nbMaxEpoch = 500;
-    //} else {
-      //++nbEpochWithoutImprov;
+      fflush(stdout);
     }
-    /*if (nbEpochWithoutImprov > nbMaxEpoch) {
-      GAKTEvent(ga);
-      nbEpochWithoutImprov = 0;
-      nbMaxEpoch += 500;
-    }*/
   } while (GAGetCurEpoch(ga) < 30000 && fabs(ev) > 0.001);
   //} while (GAGetCurEpoch(ga) < 100 && fabs(ev) > 0.001);
   printf("best after %lu epochs: %f \n", GAGetCurEpoch(ga), best);
