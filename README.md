@@ -11,4 +11,4 @@ NeuraNet provides functions to easily use the library GenAlg to search the value
 
 NeuraNet has been validated on 
 * the Iris data set: classification, 4 inputs, 3 outputs, 75 learning samples, 75 validation samples, https://archive.ics.uci.edu/ml/datasets/iris , 94.6% correct classification in 3s 
-* the Abalone data set : regression, 10 inputs, 1 output, 3000 learning samples, 1177 validation samples, http://www.cs.toronto.edu/~delve/data/abalone/desc.html , 23.2% correct classification, 62.2% +-1 error, 83.3% +-2, 91.8% +-3, 94.3% +-4, 96.6% +-5, 97.8% +-6, 98.9% +-7, 99.5% +-8, 99.7% +-9, in 17m:5s 
+* the Abalone data set : regression, 10 inputs, 1 output, 3000 learning samples, 1177 validation samples, http://www.cs.toronto.edu/~delve/data/abalone/desc.html , 25.0% correct classification, 64.3% +-1 error, 83.0% +-2, 90.3% +-3, 93.6% +-4, 96.5% +-5, 97.4% +-6, 98.9% +-7, 99.4% +-8, 99.8% +-9, in 10m:55s 
