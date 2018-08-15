@@ -368,6 +368,25 @@ void Learn(DataSetCat cat) {
     GASetTypeNeuraNet(ga, NB_INPUT, NB_MAXHIDDEN, NB_OUTPUT);
     GAInit(ga);
   }
+  // If there is a NeuraNet available, reload it into the GenAlg
+  fd = fopen("./bestnn.txt", "r");
+  if (fd) {
+    printf("Reloading previous NeuraNet...\n");
+    if (!NNLoad(&nn, fd)) {
+      printf("Failed to reload the NeuraNet.\n");
+      NeuraNetFree(&nn);
+      DataSetFree(&dataset);
+      return;
+    } else {
+      printf("Previous NeuraNet reloaded.\n");
+      bestVal = Evaluate(nn, dataset);
+      printf("Starting with best at %f.\n", bestVal);
+      GenAlgAdn* adn = GAAdn(ga, 0);
+      VecCopy(adn->_adnF, nn->_bases);
+      VecCopy(adn->_adnI, nn->_links);
+    }
+    fclose(fd);
+  }
   // Start learning process
   printf("Learning...\n");
   printf("Will stop when curEpoch >= %lu or bestVal >= %f\n",
@@ -375,17 +394,20 @@ void Learn(DataSetCat cat) {
   printf("Will save the best NeuraNet in ./bestnn.txt at each improvement\n");
   fflush(stdout);
   // Declare a variable to memorize the best value in the current epoch
-  float curBest = bestVal;
+  float curBest = 0.0;
+  float curWorst = 0.0;
   // Declare a variable to manage the save of GenAlg
   int delaySave = 0;
   // Learning loop
   while (bestVal < STOP_LEARNING_AT_VAL && 
     GAGetCurEpoch(ga) < limitEpoch) {
+    curWorst = curBest;
     curBest = INIT_BEST_VAL;
     int curBestI = 0;
     unsigned long int ageBest = 0;
     // For each adn in the GenAlg
-    for (int iEnt = GAGetNbAdns(ga); iEnt--;) {
+    //for (int iEnt = GAGetNbAdns(ga); iEnt--;) {
+    for (int iEnt = 0; iEnt < GAGetNbAdns(ga); ++iEnt) {
       // Get the adn
       GenAlgAdn* adn = GAAdn(ga, iEnt);
       // Set the links and base functions of the NeuraNet according
@@ -404,6 +426,8 @@ void Learn(DataSetCat cat) {
         curBestI = iEnt;
         ageBest = GAAdnGetAge(adn);
       }
+      if (value < curWorst)
+        curWorst = value;
     }
     // Measure time
     clock_gettime(CLOCK_REALTIME, &stop);
@@ -419,8 +443,8 @@ void Learn(DataSetCat cat) {
     if (curBest > bestVal) {
       bestVal = curBest;
       // Display info about the improvment
-      printf("Improvement at epoch %05lu: %f (in %02d:%02d:%02d:%02ds)  \n", 
-        GAGetCurEpoch(ga), bestVal, day, hour, min, sec);
+      printf("Improvement at epoch %05lu: %f(%03d) (in %02d:%02d:%02d:%02ds)       \n", 
+        GAGetCurEpoch(ga), bestVal, curBestI, day, hour, min, sec);
       fflush(stdout);
       // Set the links and base functions of the NeuraNet according
       // to the best adn
@@ -441,8 +465,11 @@ void Learn(DataSetCat cat) {
       fclose(fd);
     } else {
       fprintf(stderr, 
-        "Epoch %05lu: v%f a%lu (in %02d:%02d:%02d:%02ds)     \r", 
-        GAGetCurEpoch(ga), curBest, ageBest, day, hour, min, sec);
+        "Epoch %05lu: v%f a%03lu(%02d) kt%03lu ", 
+        GAGetCurEpoch(ga), curBest, ageBest, curBestI, 
+        GAGetNbKTEvent(ga));
+      fprintf(stderr, "(in %02d:%02d:%02d:%02ds)  \r", 
+        day, hour, min, sec);
       fflush(stderr);
     }
     ++delaySave;
