@@ -1,12 +1,9 @@
 Learning...
 Will stop when curEpoch >= 2000 or bestVal >= 0.999000
 Will save the best NeuraNet in ./bestnn.txt at each improvement
-Improvement at epoch 00000: 0.666667 (in 00:00:00:00s)  
-Improvement at epoch 00023: 0.706667 (in 00:00:00:01s)  
-Improvement at epoch 00039: 0.746667 (in 00:00:00:01s)  
-Improvement at epoch 00043: 0.773333 (in 00:00:00:01s)  
-Improvement at epoch 00045: 0.960000 (in 00:00:00:01s)  
-Improvement at epoch 00047: 0.973333 (in 00:00:00:01s)  
-Improvement at epoch 01420: 0.986667 (in 00:00:00:05s)  
+Improvement at epoch 00000: 0.666667(011) (in 00:00:00:00s)       
+Improvement at epoch 00004: 0.693333(025) (in 00:00:00:00s)       
+Improvement at epoch 00008: 0.960000(063) (in 00:00:00:00s)       
+Improvement at epoch 00010: 0.973333(084) (in 00:00:00:00s)       
 
-Learning complete (in 0:0:0:7s)
+Learning complete (in 0:0:0:6s)
