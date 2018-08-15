@@ -548,9 +548,6 @@ void NNSetLinks(NeuraNet* const that, VecShort* const links) {
   // Reset the inactive links
   for (int iLink = nbLink; iLink < NNGetNbMaxLinks(that); ++iLink)
     VecSet(that->_links, iLink * NN_NBPARAMLINK, -1);
-  // Correct the links definition in the GenAlg to improve
-  // diversity calculation
-  VecCopy(links, that->_links);
   // Free the memory
   GSetFlush(&set);
 }

@@ -372,7 +372,7 @@ void UnitTestNeuraNetGA() {
   int nbIn = 3;
   int nbOut = 3;
   int nbHid = 3;
-  int nbBase = 3;
+  int nbBase = 7;
   int nbLink = 7;
   NeuraNet* nn = NeuraNetCreate(nbIn, nbOut, nbHid, nbBase, nbLink);
   GenAlg* ga = GenAlgCreate(GENALG_NBENTITIES, GENALG_NBELITES, 
