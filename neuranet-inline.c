@@ -90,6 +90,37 @@ int NNGetNbMaxBases(const NeuraNet* const that) {
   return that->_nbMaxBases;
 }
 
+// Get the nb of base functions for convolution of the NeuraNet 'that'
+#if BUILDMODE != 0
+inline
+#endif
+int NNGetNbBasesConv(const NeuraNet* const that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    NeuraNetErr->_type = PBErrTypeNullPointer;
+    sprintf(NeuraNetErr->_msg, "'that' is null");
+    PBErrCatch(NeuraNetErr);
+  }
+#endif
+  return that->_nbBasesConv;
+}
+
+// Get the nb of base functions per cell for convolution of 
+// the NeuraNet 'that'
+#if BUILDMODE != 0
+inline
+#endif
+int NNGetNbBasesCellConv(const NeuraNet* const that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    NeuraNetErr->_type = PBErrTypeNullPointer;
+    sprintf(NeuraNetErr->_msg, "'that' is null");
+    PBErrCatch(NeuraNetErr);
+  }
+#endif
+  return that->_nbBasesCellConv;
+}
+
 // Get the nb max of links of the NeuraNet 'that'
 #if BUILDMODE != 0
 inline

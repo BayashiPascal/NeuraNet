@@ -62,6 +62,10 @@ typedef struct NeuraNet {
   VecShort* _links;
   // Hidden values
   VecFloat* _hidVal;
+  // Nb bases used for convolution
+  const int _nbBasesConv;
+  // Nb bases per cell used for convolution
+  const int _nbBasesCellConv;
 } NeuraNet;
 
 // ================ Functions declaration ====================
@@ -90,6 +94,50 @@ void NeuraNetFree(NeuraNet** that);
 // 2nd hidden layer and so on until each values of the output
 NeuraNet* NeuraNetCreateFullyConnected(const int nbIn, const int nbOut, 
   const VecShort* const hiddenLayers);
+
+// Create a NeuraNet using convolution
+// The input's dimension is equal to the dimension of 'dimIn', for 
+// example if dimIn==<2,3> the input is a 2D array of width 2 and 
+// height 3, input values are expected ordered by lines 
+// The NeuraNet has 'nbOutput' outputs
+// The dimension of each convolution cells is 'dimCell' 
+// The maximum number of convolution (in depth) is 'depthConv'
+// Each convolution layer has 'thickConv' convolutions in parallel
+// The outputs are fully connected to the last layer of convolution cells
+// For example, if the input is a 2D array of 4 cols and 3 rows, 2 
+// outputs, 2x2 convolution cell, convolution depth of 2, and 
+// convolution thickness of 2:
+// index of values from input layer to ouput layer
+// 00,01,02,03,
+// 04,05,06,07,
+// 08,09,10,11
+//
+// 12,13,14,  18,19,20,
+// 15,16,17,  21,22,23,
+// 
+// 24,25  26,27
+// 
+// 28,29
+//
+// nbInput: 12
+// nbOutput: 2
+// nbHidden: 16
+// nbMaxBases: 24
+// nbMaxLinks: 72
+// links:
+//    0,0,12, 4,0,18, 1,1,12, 0,1,13, 5,1,18, 4,1,19, 1,2,13, 0,2,14,
+//    5,2,19, 4,2,20, 1,3,14, 5,3,20, 2,4,12, 0,4,15, 6,4,18, 4,4,21,
+//    3,5,12, 2,5,13, 1,5,15, 0,5,16, 7,5,18, 6,5,19, 5,5,21, 4,5,22,
+//    3,6,13, 2,6,14, 1,6,16, 0,6,17, 7,6,19, 6,6,20, 5,6,22, 4,6,23,
+//    3,7,14, 1,7,17, 7,7,20, 5,7,23, 2,8,15, 6,8,21, 3,9,15, 2,9,16,
+//    7,9,21, 6,9,22, 3,10,16, 2,10,17, 7,10,22, 6,10,23, 3,11,17,
+//    7,11,23, 8,12,24, 9,13,24, 8,13,25, 9,14,25, 10,15,24, 11,16,24,
+//    10,16,25, 11,17,25, 12,18,26, 13,19,26, 12,19,27, 13,20,27, 
+//    14,21,26, 15,22,26, 14,22,27, 15,23,27, 16,24,28, 17,24,29, 
+//    18,25,28, 19,25,29, 20,26,28, 21,26,29, 22,27,28, 23,27,29
+NeuraNet* NeuraNetCreateConvolution(const VecShort* const dimIn, 
+  const int nbOutput, const VecShort* const dimCell, 
+  const int depthConv, const int thickConv);
   
 // Get the nb of input values of the NeuraNet 'that'
 #if BUILDMODE != 0
@@ -114,6 +162,19 @@ int NNGetNbMaxHidden(const NeuraNet* const that);
 inline
 #endif
 int NNGetNbMaxBases(const NeuraNet* const that);
+
+// Get the nb of base functions for convolution of the NeuraNet 'that'
+#if BUILDMODE != 0
+inline
+#endif
+int NNGetNbBasesConv(const NeuraNet* const that);
+
+// Get the nb of base functions per cell for convolution of 
+// the NeuraNet 'that'
+#if BUILDMODE != 0
+inline
+#endif
+int NNGetNbBasesCellConv(const NeuraNet* const that);
 
 // Get the nb max of links of the NeuraNet 'that'
 #if BUILDMODE != 0

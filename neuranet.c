@@ -54,6 +54,8 @@ NeuraNet* NeuraNetCreate(const int nbInput, const int nbOutput,
   *(int*)&(that->_nbMaxHidVal) = nbMaxHidden;
   *(int*)&(that->_nbMaxBases) = nbMaxBases;
   *(int*)&(that->_nbMaxLinks) = nbMaxLinks;
+  *(int*)&(that->_nbBasesConv) = 0;
+  *(int*)&(that->_nbBasesCellConv) = 0;
   that->_bases = VecFloatCreate(nbMaxBases * NN_NBPARAMBASE);
   that->_links = VecShortCreate(nbMaxLinks * NN_NBPARAMLINK);
   if (nbMaxHidden > 0)
@@ -163,6 +165,299 @@ NeuraNet* NeuraNetCreateFullyConnected(const int nbIn, const int nbOut,
     shiftOut += nOut;
     nIn = nOut;
   }
+  // Return the new NeuraNet
+  return nn;
+}
+
+// Create a NeuraNet using convolution
+// The input's dimension is equal to the dimension of 'dimIn', for 
+// example if dimIn==<2,3> the input is a 2D array of width 2 and 
+// height 3, input values are expected ordered by lines 
+// The NeuraNet has 'nbOutput' outputs
+// The dimension of each convolution cells is 'dimCell' 
+// The maximum number of convolution (in depth) is 'depthConv'
+// Each convolution layer has 'thickConv' convolutions in parallel
+// The outputs are fully connected to the last layer of convolution cells
+// For example, if the input is a 2D array of 4 cols and 3 rows, 2 
+// outputs, 2x2 convolution cell, convolution depth of 2, and 
+// convolution thickness of 2:
+// index of values from input layer to ouput layer
+// 00,01,02,03,
+// 04,05,06,07,
+// 08,09,10,11
+//
+// 12,13,14,  18,19,20,
+// 15,16,17,  21,22,23,
+// 
+// 24,25  26,27
+// 
+// 28,29
+//
+// nbInput: 12
+// nbOutput: 2
+// nbHidden: 16
+// nbMaxBases: 24
+// nbMaxLinks: 72
+// links:
+//    0,0,12, 4,0,18, 1,1,12, 0,1,13, 5,1,18, 4,1,19, 1,2,13, 0,2,14,
+//    5,2,19, 4,2,20, 1,3,14, 5,3,20, 2,4,12, 0,4,15, 6,4,18, 4,4,21,
+//    3,5,12, 2,5,13, 1,5,15, 0,5,16, 7,5,18, 6,5,19, 5,5,21, 4,5,22,
+//    3,6,13, 2,6,14, 1,6,16, 0,6,17, 7,6,19, 6,6,20, 5,6,22, 4,6,23,
+//    3,7,14, 1,7,17, 7,7,20, 5,7,23, 2,8,15, 6,8,21, 3,9,15, 2,9,16,
+//    7,9,21, 6,9,22, 3,10,16, 2,10,17, 7,10,22, 6,10,23, 3,11,17,
+//    7,11,23, 8,12,24, 9,13,24, 8,13,25, 9,14,25, 10,15,24, 11,16,24,
+//    10,16,25, 11,17,25, 12,18,26, 13,19,26, 12,19,27, 13,20,27, 
+//    14,21,26, 15,22,26, 14,22,27, 15,23,27, 16,24,28, 17,24,29, 
+//    18,25,28, 19,25,29, 20,26,28, 21,26,29, 22,27,28, 23,27,29
+NeuraNet* NeuraNetCreateConvolution(const VecShort* const dimIn, 
+  const int nbOutput, const VecShort* const dimCell, 
+  const int depthConv, const int thickConv) {
+#if BUILDMODE == 0
+  if (dimIn == NULL) {
+    NeuraNetErr->_type = PBErrTypeNullPointer;
+    sprintf(NeuraNetErr->_msg, "'dimIn' is null");
+    PBErrCatch(NeuraNetErr);
+  }
+  for (int iDim = VecGetDim(dimIn); iDim--;)
+    if (VecGet(dimIn, iDim) <= 0) {
+      NeuraNetErr->_type = PBErrTypeInvalidArg;
+      sprintf(NeuraNetErr->_msg, "'dimIn' %dth dim is invalid (%d>0)",
+        iDim, VecGet(dimIn, iDim));
+      PBErrCatch(NeuraNetErr);
+    }
+  if (nbOutput <= 0) {
+    NeuraNetErr->_type = PBErrTypeInvalidArg;
+    sprintf(NeuraNetErr->_msg, "'nbOutput' is invalid (0<%d)", nbOutput);
+    PBErrCatch(NeuraNetErr);
+  }
+  if (dimCell == NULL) {
+    NeuraNetErr->_type = PBErrTypeNullPointer;
+    sprintf(NeuraNetErr->_msg, "'dimCell' is null");
+    PBErrCatch(NeuraNetErr);
+  }
+  if (VecGetDim(dimCell) != VecGetDim(dimIn)) {
+    NeuraNetErr->_type = PBErrTypeNullPointer;
+    sprintf(NeuraNetErr->_msg, "'dimCell' 's dim is invalid (%d==%d)",
+      VecGetDim(dimCell), VecGetDim(dimIn));
+    PBErrCatch(NeuraNetErr);
+  }
+  for (int iDim = VecGetDim(dimCell); iDim--;)
+    if (VecGet(dimCell, iDim) <= 0) {
+      NeuraNetErr->_type = PBErrTypeInvalidArg;
+      sprintf(NeuraNetErr->_msg, "'dimCell' %dth dim is invalid (%d>0)",
+        iDim, VecGet(dimCell, iDim));
+      PBErrCatch(NeuraNetErr);
+    }
+  if (depthConv < 0) {
+    NeuraNetErr->_type = PBErrTypeInvalidArg;
+    sprintf(NeuraNetErr->_msg, "'depthConv' is invalid (0<=%d)", 
+      depthConv);
+    PBErrCatch(NeuraNetErr);
+  }
+#endif
+  // Declare a variable to memorize the nb of input, hidden values, 
+  // bases and links
+  int nbIn = 0;
+  int nbHiddenVal = 0;
+  int nbBases = 0;
+  int nbLinks = 0;
+  // Calculate the number of inputs
+  nbIn = 1;
+  for (int iDim = VecGetDim(dimIn); iDim--;)
+    nbIn *= VecGet(dimIn, iDim);
+  // Calculate the number of bases, links and hidden values
+  // Declare a variable to memorize the number of links per cell
+  int nbLinkPerCell = 1;
+  for (int iDim = VecGetDim(dimCell); iDim--;)
+    nbLinkPerCell *= VecGet(dimCell, iDim);
+  // Declare a variable to memorize the position of the convolution
+  // cell in the current convolution layer
+  VecShort* pos = VecShortCreate(VecGetDim(dimIn));
+  // Declare a variable to memorize the position in the convolution cell
+  VecShort* posCell = VecShortCreate(VecGetDim(dimIn));
+  // Declare variables to memorize the dimension and size of the input 
+  // layer at current convolution level
+  VecShort* curDimIn = VecClone(dimIn);
+  int sizeLayerIn = 1;
+  for (int iDim = VecGetDim(curDimIn); iDim--;) {
+    sizeLayerIn *= VecGet(curDimIn, iDim);
+  }
+  // Declare variables to memorize the dimension and size of the 
+  // output layer at current convolution level
+  VecShort* curDimOut = VecClone(curDimIn);
+  int sizeLayerOut = 1;
+  for (int iDim = VecGetDim(curDimOut); iDim--;) {
+    VecSetAdd(curDimOut, iDim, -1 * VecGet(dimCell, iDim) + 1);
+    sizeLayerOut *= VecGet(curDimOut, iDim);
+  }
+  // Loop on convolution levels
+  for (int iConv = 0; iConv < depthConv; ++iConv) {
+    // Update the number of bases
+    nbBases += nbLinkPerCell;
+    // Update the number of hidden values
+    nbHiddenVal += sizeLayerOut;
+    // Update the number of links
+    nbLinks += sizeLayerOut * nbLinkPerCell;
+    // If we are not a the last convolution level
+    if (iConv < depthConv - 1) {
+      // Update input and output dimensions at next convolution level 
+      VecCopy(curDimIn, curDimOut);
+      sizeLayerIn = sizeLayerOut;
+      sizeLayerOut = 1;
+      for (int iDim = VecGetDim(curDimOut); iDim--;) {
+        VecSetAdd(curDimOut, iDim, -1 * VecGet(dimCell, iDim) + 1);
+        sizeLayerOut *= VecGet(curDimOut, iDim);
+      }
+    }
+  }
+  // Multiply by the number of convolution in parallel
+  nbHiddenVal *= thickConv;
+  nbBases *= thickConv;
+  nbLinks *= thickConv;
+  int nbBasesConv = nbBases;
+  // Add the links and bases for the fully connected layer toward output
+  nbBases += sizeLayerOut * thickConv * nbOutput;
+  nbLinks += sizeLayerOut * thickConv * nbOutput;
+  // Create the NeuraNet
+  NeuraNet* nn = 
+    NeuraNetCreate(nbIn, nbOutput, nbHiddenVal, nbBases, nbLinks);
+  *(int*)&(nn->_nbBasesConv) = nbBasesConv;
+  *(int*)&(nn->_nbBasesCellConv) = nbLinkPerCell;
+  // Declare variables to create the links
+  VecShort* links = VecShortCreate(nbLinks * NN_NBPARAMLINK);
+  // Declare a variable to memorize the index of the currenlty 
+  // created link
+  int iLink = 0;
+  // Reset the dimension and size of the input layer at current 
+  // convolution level
+  VecCopy(curDimIn, dimIn);
+  sizeLayerIn = 1;
+  for (int iDim = VecGetDim(curDimIn); iDim--;) {
+    sizeLayerIn *= VecGet(curDimIn, iDim);
+  }
+  // Reset the dimension and size of the output layer at current 
+  // convolution level
+  VecCopy(curDimOut, dimIn);
+  sizeLayerOut = 1;
+  for (int iDim = VecGetDim(curDimOut); iDim--;) {
+    VecSetAdd(curDimOut, iDim, -1 * VecGet(dimCell, iDim) + 1);
+    sizeLayerOut *= VecGet(curDimOut, iDim);
+  }
+  // Declare variables to memorize the index of the beginning of the
+  // input and output layer and base functions at current convolution 
+  // level
+  int* iStartBase = PBErrMalloc(NeuraNetErr, sizeof(int) * thickConv);
+  int* iStartLayerIn = PBErrMalloc(NeuraNetErr, sizeof(int) * thickConv);
+  int* iStartLayerOut = PBErrMalloc(NeuraNetErr, 
+    sizeof(int) * thickConv);
+  for (int iThick = 0; iThick < thickConv; ++iThick) {
+    iStartLayerIn[iThick] = 0;
+    iStartLayerOut[iThick] = sizeLayerIn + iThick * sizeLayerOut;
+    iStartBase[iThick] = iThick * nbLinkPerCell;
+  }
+  // Loop on convolution levels
+  for (int iConv = 0; iConv < depthConv; ++iConv) {
+    // Reset the position of the convolution cell in the input layer
+    VecSetNull(pos);
+    // Loop on position of the convolution cell at the current 
+    // convolution levels
+    do {
+      do {
+        // Loop on convolution in parallel
+        for (int iThick = 0; iThick < thickConv; ++iThick) {
+          // Declare a variable to memorize the index of the input of the
+          // current link
+          int iInput = 0;
+          for (int iDim = VecGetDim(curDimIn); iDim--;) {
+            iInput *= VecGet(curDimIn, iDim);
+            iInput += VecGet(posCell, iDim) + VecGet(pos, iDim);
+          }
+          iInput += iStartLayerIn[iThick];
+          // Declare a variable to memorize the index of the output of 
+          // the current link
+          int iOutput = 0;
+          for (int iDim = VecGetDim(curDimOut); iDim--;) {
+            iOutput *= VecGet(curDimOut, iDim);
+            iOutput += VecGet(pos, iDim);
+          }
+          iOutput += iStartLayerOut[iThick];
+          // Declare a variable to memorize the index of the base of the
+          // current link
+          int iBase = 0;
+          for (int iDim = VecGetDim(posCell); iDim--;) {
+            iBase *= VecGet(dimCell, iDim);
+            iBase += VecGet(posCell, iDim);
+          }
+          iBase += iStartBase[iThick];
+          // Set the current link's parameters
+          VecSet(links, iLink * NN_NBPARAMLINK, iBase);
+          VecSet(links, iLink * NN_NBPARAMLINK + 1, iInput);
+          VecSet(links, iLink * NN_NBPARAMLINK + 2, iOutput);
+          // Increment the index of the current link
+          ++iLink;
+        }
+      } while (VecPStep(posCell, dimCell));
+    } while (VecPStep(pos, curDimOut));
+    // If we are not at the last convolution level
+    if (iConv < depthConv - 1) {
+      // Update input and output dimensions at next convolution level 
+      VecCopy(curDimIn, curDimOut);
+      sizeLayerIn = sizeLayerOut;
+      sizeLayerOut = 1;
+      for (int iDim = VecGetDim(curDimOut); iDim--;) {
+        VecSetAdd(curDimOut, iDim, -1 * VecGet(dimCell, iDim) + 1);
+        sizeLayerOut *= VecGet(curDimOut, iDim);
+      }
+    }
+    // Update the start index of input and output layers and bases
+    // for each convolution in parallel
+    for (int iThick = 0; iThick < thickConv; ++iThick) {
+      iStartLayerIn[iThick] = iStartLayerOut[iThick];
+      iStartLayerOut[iThick] = iStartLayerIn[0] + 
+        thickConv * sizeLayerIn + iThick * sizeLayerOut;
+      iStartBase[iThick] = 
+        ((iConv + 1) * thickConv + iThick) * nbLinkPerCell;
+    }
+  }
+  // Set the links of the last fully connected layer between last 
+  // convolution and NeuraNet output
+  // Declare a variable to remember the index of the base
+  int iBase = iStartBase[0];
+  // Loop on the last output of convolution layer
+  for (int iLayerOut = 0; iLayerOut < sizeLayerOut; ++iLayerOut) {
+    // Loop on parallel convolution
+    for (int iThick = 0; iThick < thickConv; ++iThick) {
+      // Loop on output of the NeuraNet
+      for (int iOut = 0; iOut < nbOutput; ++iOut) {
+        // Declare a variable to memorize the index of the input of 
+        // the link
+        int iInput = iStartLayerIn[0] + 
+          iLayerOut * thickConv + iThick;
+        // Declare a variable to memorize the index of the output of 
+        // the link
+        int iOutput = iOut + nbIn + nbHiddenVal;
+        // Set the link's parameters
+        VecSet(links, iLink * NN_NBPARAMLINK, iBase);
+        VecSet(links, iLink * NN_NBPARAMLINK + 1, iInput);
+        VecSet(links, iLink * NN_NBPARAMLINK + 2, iOutput);
+        // Increment the link index
+        ++iLink;
+        // Increment the base function
+        ++iBase;
+      }
+    }
+  } 
+  // Set up the links
+  NNSetLinks(nn, links);
+  // Free memory
+  VecFree(&links);
+  VecFree(&pos);
+  VecFree(&posCell);
+  VecFree(&curDimIn);
+  VecFree(&curDimOut);
+  free(iStartBase);
+  free(iStartLayerIn);
+  free(iStartLayerOut);
   // Return the new NeuraNet
   return nn;
 }

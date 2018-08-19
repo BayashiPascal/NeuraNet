@@ -64,6 +64,7 @@ void UnitTestNeuraNetCreateFree() {
     nn->_nbOutputVal != nbOut ||
     nn->_nbMaxHidVal != nbHid ||
     nn->_nbMaxBases != nbBase ||
+    nn->_nbBasesConv != 0 ||
     nn->_nbMaxLinks != nbLink ||
     nn->_bases == NULL ||
     nn->_links == NULL ||
@@ -154,6 +155,57 @@ void UnitTestNeuraNetCreateFullyConnected() {
   printf("UnitTestNeuraNetCreateFullyConnected OK\n");
 }
 
+void UnitTestNeuraNetCreateConvolution() {
+  int nbOut = 2;
+  int thickConv = 2;
+  int depthConv = 2;
+  VecShort* dimIn = VecShortCreate(2);
+  VecSet(dimIn, 0, 4);
+  VecSet(dimIn, 1, 3);
+  VecShort* dimCell = VecShortCreate(2);
+  VecSet(dimCell, 0, 2);
+  VecSet(dimCell, 1, 2);
+  NeuraNet* nn = NeuraNetCreateConvolution(dimIn, nbOut, dimCell, 
+    depthConv, thickConv);
+  NNPrintln(nn, stdout);
+  if (nn == NULL ||
+    nn->_nbInputVal != 12 ||
+    nn->_nbOutputVal != 2 ||
+    nn->_nbMaxHidVal != 16 ||
+    nn->_nbMaxBases != 24 ||
+    nn->_nbMaxLinks != 72 ||
+    nn->_bases == NULL ||
+    nn->_links == NULL ||
+    nn->_hidVal == NULL) {
+    NeuraNetErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(NeuraNetErr->_msg, "NeuraNetCreateConvolution failed");
+    PBErrCatch(NeuraNetErr);
+  }
+  int check[216] = {
+    0,0,12, 4,0,18, 1,1,12, 0,1,13, 5,1,18, 4,1,19, 1,2,13, 0,2,14,
+    5,2,19, 4,2,20, 1,3,14, 5,3,20, 2,4,12, 0,4,15, 6,4,18, 4,4,21,
+    3,5,12, 2,5,13, 1,5,15, 0,5,16, 7,5,18, 6,5,19, 5,5,21, 4,5,22,
+    3,6,13, 2,6,14, 1,6,16, 0,6,17, 7,6,19, 6,6,20, 5,6,22, 4,6,23,
+    3,7,14, 1,7,17, 7,7,20, 5,7,23, 2,8,15, 6,8,21, 3,9,15, 2,9,16,
+    7,9,21, 6,9,22, 3,10,16, 2,10,17, 7,10,22, 6,10,23, 3,11,17,
+    7,11,23, 8,12,24, 9,13,24, 8,13,25, 9,14,25, 10,15,24, 11,16,24,
+    10,16,25, 11,17,25, 12,18,26, 13,19,26, 12,19,27, 13,20,27, 
+    14,21,26, 15,22,26, 14,22,27, 15,23,27, 16,24,28, 17,24,29, 
+    18,25,28, 19,25,29, 20,26,28, 21,26,29, 22,27,28, 23,27,29
+    };
+  for (int iCheck = 216; iCheck--;) {
+    if (VecGet(nn->_links, iCheck) != check[iCheck]) {
+      NeuraNetErr->_type = PBErrTypeUnitTestFailed;
+      sprintf(NeuraNetErr->_msg, "NeuraNetCreateConvolution failed");
+      PBErrCatch(NeuraNetErr);
+    }
+  }
+  NeuraNetFree(&nn);
+  VecFree(&dimIn);
+  VecFree(&dimCell);
+  printf("UnitTestNeuraNetCreateConvolution OK\n");
+}
+
 void UnitTestNeuraNetGetSet() {
   int nbIn = 10;
   int nbOut = 20;
@@ -169,6 +221,16 @@ void UnitTestNeuraNetGetSet() {
   if (NNGetNbMaxBases(nn) != nbBase) {
     NeuraNetErr->_type = PBErrTypeUnitTestFailed;
     sprintf(NeuraNetErr->_msg, "NNGetNbMaxBases failed");
+    PBErrCatch(NeuraNetErr);
+  }
+  if (NNGetNbBasesConv(nn) != 0) {
+    NeuraNetErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(NeuraNetErr->_msg, "NNGetNbBasesConv failed");
+    PBErrCatch(NeuraNetErr);
+  }
+  if (NNGetNbBasesCellConv(nn) != 0) {
+    NeuraNetErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(NeuraNetErr->_msg, "NNGetNbBasesCellConv failed");
     PBErrCatch(NeuraNetErr);
   }
   if (NNGetNbMaxHidden(nn) != nbHid) {
@@ -419,6 +481,7 @@ void UnitTestNeuraNetGA() {
 void UnitTestNeuraNet() {
   UnitTestNeuraNetCreateFree();
   UnitTestNeuraNetCreateFullyConnected();
+  UnitTestNeuraNetCreateConvolution();
   UnitTestNeuraNetGetSet();
   UnitTestNeuraNetSaveLoad();
   UnitTestNeuraNetEvalPrint();
