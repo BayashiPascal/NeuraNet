@@ -85,7 +85,7 @@ void UnitTestNeuraNetCreateFree() {
 void UnitTestNeuraNetCreateFullyConnected() {
   int nbIn = 2;
   int nbOut = 3;
-  VecShort* hiddenLayers = NULL;
+  VecLong* hiddenLayers = NULL;
   NeuraNet* nn = NeuraNetCreateFullyConnected(nbIn, nbOut, hiddenLayers);
   if (nn == NULL ||
     nn->_nbInputVal != nbIn ||
@@ -113,7 +113,7 @@ void UnitTestNeuraNetCreateFullyConnected() {
   NeuraNetFree(&nn);
   nbIn = 5;
   nbOut = 2;
-  hiddenLayers = VecShortCreate(2);
+  hiddenLayers = VecLongCreate(2);
   VecSet(hiddenLayers, 0, 4);
   VecSet(hiddenLayers, 1, 3);
   nn = NeuraNetCreateFullyConnected(nbIn, nbOut, hiddenLayers);
@@ -274,7 +274,7 @@ void UnitTestNeuraNetGetSet() {
       PBErrCatch(NeuraNetErr);
     }
   VecFree(&bases);
-  VecShort* links = VecShortCreate(15);
+  VecLong* links = VecLongCreate(15);
   short data[15] = {2,2,35, 1,1,12, -1,0,0, 2,15,20, 3,20,15};
   for (int i = 15; i--;)
     VecSet(links, i, data[i]);
@@ -303,7 +303,7 @@ void UnitTestNeuraNetSaveLoad() {
     VecSet(bases, i, 0.01 * (float)i);
   NNSetBases(nn, bases);
   VecFree(&bases);
-  VecShort* links = VecShortCreate(15);
+  VecLong* links = VecLongCreate(15);
   short data[15] = {2,2,35, 1,1,12, -1,0,0, 2,15,20, 3,20,15};
   for (int i = 15; i--;)
     VecSet(links, i, data[i]);
@@ -368,7 +368,7 @@ void UnitTestNeuraNetEvalPrint() {
   NNBasesSet(nn, 3, -0.5);
   NNBasesSet(nn, 8, -0.5);
   short data[21] = {0,0,3, 1,0,3, 0,1,4, 0,3,6, 0,4,6, 0,4,7, -1,0,0};
-  VecShort *links = VecShortCreate(21);
+  VecLong *links = VecLongCreate(21);
   for (int i = 21; i--;)
     VecSet(links, i, data[i]);
   NNSetLinks(nn, links);
@@ -466,7 +466,7 @@ void UnitTestNeuraNetGA() {
       fflush(stdout);
     }
   } while (GAGetCurEpoch(ga) < 30000 && fabs(ev) > 0.001);
-  //} while (GAGetCurEpoch(ga) < 100 && fabs(ev) > 0.001);
+  //} while (GAGetCurEpoch(ga) < 10 && fabs(ev) > 0.001);
   printf("best after %lu epochs: %f \n", GAGetCurEpoch(ga), best);
   NNPrintln(nn, stdout);
   FILE* fd = fopen("./bestnn.txt", "w");

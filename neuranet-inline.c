@@ -64,7 +64,7 @@ int NNGetNbOutput(const NeuraNet* const that) {
 #if BUILDMODE != 0
 inline
 #endif
-int NNGetNbMaxHidden(const NeuraNet* const that) {
+long NNGetNbMaxHidden(const NeuraNet* const that) {
 #if BUILDMODE == 0
   if (that == NULL) {
     NeuraNetErr->_type = PBErrTypeNullPointer;
@@ -79,7 +79,7 @@ int NNGetNbMaxHidden(const NeuraNet* const that) {
 #if BUILDMODE != 0
 inline
 #endif
-int NNGetNbMaxBases(const NeuraNet* const that) {
+long NNGetNbMaxBases(const NeuraNet* const that) {
 #if BUILDMODE == 0
   if (that == NULL) {
     NeuraNetErr->_type = PBErrTypeNullPointer;
@@ -94,7 +94,7 @@ int NNGetNbMaxBases(const NeuraNet* const that) {
 #if BUILDMODE != 0
 inline
 #endif
-int NNGetNbBasesConv(const NeuraNet* const that) {
+long NNGetNbBasesConv(const NeuraNet* const that) {
 #if BUILDMODE == 0
   if (that == NULL) {
     NeuraNetErr->_type = PBErrTypeNullPointer;
@@ -110,7 +110,7 @@ int NNGetNbBasesConv(const NeuraNet* const that) {
 #if BUILDMODE != 0
 inline
 #endif
-int NNGetNbBasesCellConv(const NeuraNet* const that) {
+long NNGetNbBasesCellConv(const NeuraNet* const that) {
 #if BUILDMODE == 0
   if (that == NULL) {
     NeuraNetErr->_type = PBErrTypeNullPointer;
@@ -125,7 +125,7 @@ int NNGetNbBasesCellConv(const NeuraNet* const that) {
 #if BUILDMODE != 0
 inline
 #endif
-int NNGetNbMaxLinks(const NeuraNet* const that) {
+long NNGetNbMaxLinks(const NeuraNet* const that) {
 #if BUILDMODE == 0
   if (that == NULL) {
     NeuraNetErr->_type = PBErrTypeNullPointer;
@@ -155,7 +155,7 @@ const VecFloat* NNBases(const NeuraNet* const that) {
 #if BUILDMODE != 0
 inline
 #endif
-const VecShort* NNLinks(const NeuraNet* const that) {
+const VecLong* NNLinks(const NeuraNet* const that) {
 #if BUILDMODE == 0
   if (that == NULL) {
     NeuraNetErr->_type = PBErrTypeNullPointer;
@@ -185,7 +185,7 @@ const VecFloat* NNHiddenValues(const NeuraNet* const that) {
 #if BUILDMODE != 0
 inline
 #endif
-float NNGetHiddenValue(const NeuraNet* const that, const int iVal) {
+float NNGetHiddenValue(const NeuraNet* const that, const long iVal) {
 #if BUILDMODE == 0
   if (that == NULL) {
     NeuraNetErr->_type = PBErrTypeNullPointer;
@@ -194,7 +194,7 @@ float NNGetHiddenValue(const NeuraNet* const that, const int iVal) {
   }
   if (iVal < 0 || iVal >= that->_nbMaxHidVal) {
     NeuraNetErr->_type = PBErrTypeInvalidArg;
-    sprintf(NeuraNetErr->_msg, "'iVal' is invalid (0<=%d<%d)", 
+    sprintf(NeuraNetErr->_msg, "'iVal' is invalid (0<=%ld<%ld)", 
       iVal, that->_nbMaxHidVal);
     PBErrCatch(NeuraNetErr);
   }
@@ -225,7 +225,7 @@ void NNSetBases(NeuraNet* const that, const VecFloat* const bases) {
   if (VecGetDim(bases) != that->_nbMaxBases * NN_NBPARAMBASE) {
     NeuraNetErr->_type = PBErrTypeInvalidArg;
     sprintf(NeuraNetErr->_msg, 
-      "'bases' 's dimension is invalid (%d!=%d)", 
+      "'bases' 's dimension is invalid (%ld!=%ld)", 
       VecGetDim(bases), that->_nbMaxBases * NN_NBPARAMBASE);
     PBErrCatch(NeuraNetErr);
   }
@@ -237,7 +237,8 @@ void NNSetBases(NeuraNet* const that, const VecFloat* const bases) {
 #if BUILDMODE != 0
 inline
 #endif
-void NNBasesSet(NeuraNet* const that, const int iBase, const float base) {
+void NNBasesSet(NeuraNet* const that, const long iBase, 
+  const float base) {
 #if BUILDMODE == 0
   if (that == NULL) {
     NeuraNetErr->_type = PBErrTypeNullPointer;
@@ -247,7 +248,7 @@ void NNBasesSet(NeuraNet* const that, const int iBase, const float base) {
   if (iBase < 0 || iBase >= that->_nbMaxBases * NN_NBPARAMBASE) {
     NeuraNetErr->_type = PBErrTypeInvalidArg;
     sprintf(NeuraNetErr->_msg, 
-      "'iBase' is invalid (0<=%d<%d)", 
+      "'iBase' is invalid (0<=%ld<%ld)", 
       iBase, that->_nbMaxBases * NN_NBPARAMBASE);
     PBErrCatch(NeuraNetErr);
   }

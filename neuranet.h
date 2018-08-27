@@ -48,24 +48,24 @@ typedef struct NeuraNet {
   // Nb of output values
   const int _nbOutputVal;
   // Nb max of hidden values
-  const int _nbMaxHidVal;
+  const long _nbMaxHidVal;
   // Nb max of base functions
-  const int _nbMaxBases;
+  const long _nbMaxBases;
   // Nb max of links
-  const int _nbMaxLinks;
+  const long _nbMaxLinks;
   // VecFloat describing the base functions
   // NN_NBPARAMBASE values per base function
   VecFloat* _bases;
   // VecShort describing the links
   // NN_NBPARAMLINK values per link (base id, input id, output id)
   // if (base id equals -1 the link is inactive)
-  VecShort* _links;
+  VecLong* _links;
   // Hidden values
   VecFloat* _hidVal;
   // Nb bases used for convolution
-  const int _nbBasesConv;
+  const long _nbBasesConv;
   // Nb bases per cell used for convolution
-  const int _nbBasesCellConv;
+  const long _nbBasesCellConv;
 } NeuraNet;
 
 // ================ Functions declaration ====================
@@ -74,7 +74,7 @@ typedef struct NeuraNet {
 // output values, 'nbMaxHidden' hidden values, 'nbMaxBases' base 
 // functions, 'nbMaxLinks' links
 NeuraNet* NeuraNetCreate(const int nbInput, const int nbOutput, 
-  const int nbMaxHidden, const int nbMaxBases, const int nbMaxLinks);
+  const long nbMaxHidden, const long nbMaxBases, const long nbMaxLinks);
 
 // Free the memory used by the NeuraNet 'that'
 void NeuraNetFree(NeuraNet** that);
@@ -93,7 +93,7 @@ void NeuraNetFree(NeuraNet** that);
 // hidden values of the first hidden layer to each hidden value of the 
 // 2nd hidden layer and so on until each values of the output
 NeuraNet* NeuraNetCreateFullyConnected(const int nbIn, const int nbOut, 
-  const VecShort* const hiddenLayers);
+  const VecLong* const hiddenLayers);
 
 // Create a NeuraNet using convolution
 // The input's dimension is equal to the dimension of 'dimIn', for 
@@ -155,32 +155,32 @@ int NNGetNbOutput(const NeuraNet* const that);
 #if BUILDMODE != 0
 inline
 #endif
-int NNGetNbMaxHidden(const NeuraNet* const that);
+long NNGetNbMaxHidden(const NeuraNet* const that);
 
 // Get the nb max of base functions of the NeuraNet 'that'
 #if BUILDMODE != 0
 inline
 #endif
-int NNGetNbMaxBases(const NeuraNet* const that);
+long NNGetNbMaxBases(const NeuraNet* const that);
 
 // Get the nb of base functions for convolution of the NeuraNet 'that'
 #if BUILDMODE != 0
 inline
 #endif
-int NNGetNbBasesConv(const NeuraNet* const that);
+long NNGetNbBasesConv(const NeuraNet* const that);
 
 // Get the nb of base functions per cell for convolution of 
 // the NeuraNet 'that'
 #if BUILDMODE != 0
 inline
 #endif
-int NNGetNbBasesCellConv(const NeuraNet* const that);
+long NNGetNbBasesCellConv(const NeuraNet* const that);
 
 // Get the nb max of links of the NeuraNet 'that'
 #if BUILDMODE != 0
 inline
 #endif
-int NNGetNbMaxLinks(const NeuraNet* const that);
+long NNGetNbMaxLinks(const NeuraNet* const that);
 
 // Get the parameters of the base functions of the NeuraNet 'that'
 #if BUILDMODE != 0
@@ -192,7 +192,7 @@ const VecFloat* NNBases(const NeuraNet* const that);
 #if BUILDMODE != 0
 inline
 #endif
-const VecShort* NNLinks(const NeuraNet* const that);
+const VecLong* NNLinks(const NeuraNet* const that);
 
 // Get the hidden values of the NeuraNet 'that'
 #if BUILDMODE != 0
@@ -204,7 +204,7 @@ const VecFloat* NNHiddenValues(const NeuraNet* const that);
 #if BUILDMODE != 0
 inline
 #endif
-float NNGetHiddenValue(const NeuraNet* const that, const int iVal);
+float NNGetHiddenValue(const NeuraNet* const that, const long iVal);
 
 // Set the parameters of the base functions of the NeuraNet 'that' to 
 // a copy of 'bases'
@@ -221,7 +221,7 @@ void NNSetBases(NeuraNet* const that, const VecFloat* const bases);
 #if BUILDMODE != 0
 inline
 #endif
-void NNBasesSet(NeuraNet* const that, const int iBase, const float base);
+void NNBasesSet(NeuraNet* const that, const long iBase, const float base);
 
 // Set the links description of the NeuraNet 'that' to a copy of 'links'
 // Links with a base function equals to -1 are ignored
@@ -231,7 +231,7 @@ void NNBasesSet(NeuraNet* const that, const int iBase, const float base);
 // sorted
 // Each link is defined by (base index, input index, output index)
 // If base index equals -1 it means the link is inactive
-void NNSetLinks(NeuraNet* const that, VecShort* const links);
+void NNSetLinks(NeuraNet* const that, VecLong* const links);
 
 // Calculate the output values for the input values 'input' for the 
 // NeuraNet 'that' and memorize the result in 'output'
@@ -269,9 +269,9 @@ void NNPrintln(const NeuraNet* const that, FILE* const stream);
 
 // Get the length of the adn of float values to be used in the GenAlg 
 // library for the NeuraNet 'that'
-static int NNGetGAAdnFloatLength(const NeuraNet* const that)
+static long NNGetGAAdnFloatLength(const NeuraNet* const that)
   __attribute__((unused));
-static int NNGetGAAdnFloatLength(const NeuraNet* const that) {
+static long NNGetGAAdnFloatLength(const NeuraNet* const that) {
 #if BUILDMODE == 0
   if (that == NULL) {
     NeuraNetErr->_type = PBErrTypeNullPointer;
@@ -284,9 +284,9 @@ static int NNGetGAAdnFloatLength(const NeuraNet* const that) {
 
 // Get the length of the adn of int values to be used in the GenAlg 
 // library for the NeuraNet 'that'
-static int NNGetGAAdnIntLength(const NeuraNet* const that)
+static long NNGetGAAdnIntLength(const NeuraNet* const that)
   __attribute__((unused));
-static int NNGetGAAdnIntLength(const NeuraNet* const that) {
+static long NNGetGAAdnIntLength(const NeuraNet* const that) {
 #if BUILDMODE == 0
   if (that == NULL) {
     NeuraNetErr->_type = PBErrTypeNullPointer;
@@ -316,7 +316,7 @@ static void NNSetGABoundsBases(const NeuraNet* const that, GenAlg* const ga) {
   if (GAGetLengthAdnFloat(ga) != NNGetGAAdnFloatLength(that)) {
     NeuraNetErr->_type = PBErrTypeInvalidArg;
     sprintf(NeuraNetErr->_msg, "'ga' 's float genes dimension doesn't\
- matches 'that' 's max nb of bases (%d==%d)",
+ matches 'that' 's max nb of bases (%ld==%ld)",
       GAGetLengthAdnFloat(ga), NNGetGAAdnFloatLength(that));
     PBErrCatch(NeuraNetErr);
   }
@@ -326,7 +326,7 @@ static void NNSetGABoundsBases(const NeuraNet* const that, GenAlg* const ga) {
   // Init the bounds
   VecSet(&bounds, 0, -1.0); VecSet(&bounds, 1, 1.0);
   // For each gene
-  for (int iGene = NNGetGAAdnFloatLength(that); iGene--;)
+  for (long iGene = NNGetGAAdnFloatLength(that); iGene--;)
     // Set the bounds
     GASetBoundsAdnFloat(ga, iGene, &bounds);
 }
@@ -350,15 +350,15 @@ static void NNSetGABoundsLinks(const NeuraNet* const that, GenAlg* const ga) {
   if (GAGetLengthAdnInt(ga) != NNGetGAAdnIntLength(that)) {
     NeuraNetErr->_type = PBErrTypeInvalidArg;
     sprintf(NeuraNetErr->_msg, "'ga' 's int genes dimension doesn't\
- matches 'that' 's max nb of links (%d==%d)",
+ matches 'that' 's max nb of links (%ld==%ld)",
       GAGetLengthAdnInt(ga), NNGetGAAdnIntLength(that));
     PBErrCatch(NeuraNetErr);
   }
 #endif
   // Declare a vector to memorize the bounds
-  VecShort2D bounds = VecShortCreateStatic2D();
+  VecLong2D bounds = VecLongCreateStatic2D();
   // For each gene
-  for (int iGene = 0; iGene < NNGetGAAdnIntLength(that); 
+  for (long iGene = 0; iGene < NNGetGAAdnIntLength(that); 
     iGene += NN_NBPARAMLINK) {
     // Set the bounds for base id
     VecSet(&bounds, 0, -1); 

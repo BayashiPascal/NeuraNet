@@ -15,7 +15,7 @@
 // output values, 'nbMaxHidden' hidden values, 'nbMaxBases' base 
 // functions, 'nbMaxLinks' links
 NeuraNet* NeuraNetCreate(const int nbInput, const int nbOutput, 
-  const int nbMaxHidden, const int nbMaxBases, const int nbMaxLinks) {
+  const long nbMaxHidden, const long nbMaxBases, const long nbMaxLinks) {
 #if BUILDMODE == 0
   if (nbInput <= 0) {
     NeuraNetErr->_type = PBErrTypeInvalidArg;
@@ -29,19 +29,19 @@ NeuraNet* NeuraNetCreate(const int nbInput, const int nbOutput,
   }
   if (nbMaxHidden < 0) {
     NeuraNetErr->_type = PBErrTypeInvalidArg;
-    sprintf(NeuraNetErr->_msg, "'nbMaxHidden' is invalid (0<=%d)", 
+    sprintf(NeuraNetErr->_msg, "'nbMaxHidden' is invalid (0<=%ld)", 
       nbMaxHidden);
     PBErrCatch(NeuraNetErr);
   }
   if (nbMaxBases <= 0) {
     NeuraNetErr->_type = PBErrTypeInvalidArg;
-    sprintf(NeuraNetErr->_msg, "'nbMaxBases' is invalid (0<%d)", 
+    sprintf(NeuraNetErr->_msg, "'nbMaxBases' is invalid (0<%ld)", 
       nbMaxBases);
     PBErrCatch(NeuraNetErr);
   }
   if (nbMaxLinks <= 0) {
     NeuraNetErr->_type = PBErrTypeInvalidArg;
-    sprintf(NeuraNetErr->_msg, "'nbMaxLinks' is invalid (0<%d)", 
+    sprintf(NeuraNetErr->_msg, "'nbMaxLinks' is invalid (0<%ld)", 
       nbMaxLinks);
     PBErrCatch(NeuraNetErr);
   }
@@ -51,13 +51,13 @@ NeuraNet* NeuraNetCreate(const int nbInput, const int nbOutput,
   // Set properties
   *(int*)&(that->_nbInputVal) = nbInput;
   *(int*)&(that->_nbOutputVal) = nbOutput;
-  *(int*)&(that->_nbMaxHidVal) = nbMaxHidden;
-  *(int*)&(that->_nbMaxBases) = nbMaxBases;
-  *(int*)&(that->_nbMaxLinks) = nbMaxLinks;
-  *(int*)&(that->_nbBasesConv) = 0;
-  *(int*)&(that->_nbBasesCellConv) = 0;
+  *(long*)&(that->_nbMaxHidVal) = nbMaxHidden;
+  *(long*)&(that->_nbMaxBases) = nbMaxBases;
+  *(long*)&(that->_nbMaxLinks) = nbMaxLinks;
+  *(long*)&(that->_nbBasesConv) = 0;
+  *(long*)&(that->_nbBasesCellConv) = 0;
   that->_bases = VecFloatCreate(nbMaxBases * NN_NBPARAMBASE);
-  that->_links = VecShortCreate(nbMaxLinks * NN_NBPARAMLINK);
+  that->_links = VecLongCreate(nbMaxLinks * NN_NBPARAMLINK);
   if (nbMaxHidden > 0)
     that->_hidVal = VecFloatCreate(nbMaxHidden);
   else
@@ -94,7 +94,7 @@ void NeuraNetFree(NeuraNet** that) {
 // hidden values of the first hidden layer to each hidden value of the 
 // 2nd hidden layer and so on until each values of the output
 NeuraNet* NeuraNetCreateFullyConnected(const int nbIn, const int nbOut, 
-  const VecShort* const hiddenLayers) {
+  const VecLong* const hiddenLayers) {
 #if BUILDMODE == 0
   if (nbIn <= 0) {
     NeuraNetErr->_type = PBErrTypeInvalidArg;
@@ -109,19 +109,19 @@ NeuraNet* NeuraNetCreateFullyConnected(const int nbIn, const int nbOut,
 #endif
   // Declare variable to memorize the number of links, bases 
   // and hidden values
-  int nbHiddenVal = 0;
-  int nbBases = 0;
-  int nbLinks = 0;
-  int nbHiddenLayer = 0;
+  long nbHiddenVal = 0;
+  long nbBases = 0;
+  long nbLinks = 0;
+  long nbHiddenLayer = 0;
   // If there are hidden layers
   if (hiddenLayers != NULL) {
     // Get the number of hidden layers
     nbHiddenLayer = VecGetDim(hiddenLayers);
     // Declare two variables for computation
-    int nIn = nbIn;
-    int nOut = 0;
+    long nIn = nbIn;
+    long nOut = 0;
     // Calculate the nb of links and hidden values
-    for (int iLayer = 0; iLayer < nbHiddenLayer; ++iLayer) {
+    for (long iLayer = 0; iLayer < nbHiddenLayer; ++iLayer) {
       nOut = VecGet(hiddenLayers, iLayer);
       nbHiddenVal += nOut;
       nbLinks += nIn * nOut;
@@ -139,22 +139,22 @@ NeuraNet* NeuraNetCreateFullyConnected(const int nbIn, const int nbOut,
   NeuraNet* nn = 
     NeuraNetCreate(nbIn, nbOut, nbHiddenVal, nbBases, nbLinks);
   // Declare a variable to memorize the index of the link
-  int iLink = 0;
+  long iLink = 0;
   // Declare variables for computation
-  int shiftIn = 0;
-  int shiftOut = nbIn;
-  int nIn = nbIn;
-  int nOut = 0;
+  long shiftIn = 0;
+  long shiftOut = nbIn;
+  long nIn = nbIn;
+  long nOut = 0;
   // Loop on hidden layers
-  for (int iLayer = 0; iLayer <= nbHiddenLayer; ++iLayer) {
+  for (long iLayer = 0; iLayer <= nbHiddenLayer; ++iLayer) {
     // Init the links
     if (iLayer < nbHiddenLayer)
       nOut = VecGet(hiddenLayers, iLayer);
     else
       nOut = nbOut;
-    for (int iIn = 0; iIn < nIn; ++iIn) {
-      for (int iOut = 0; iOut < nOut; ++iOut) {
-        int jLink = NN_NBPARAMLINK * iLink;
+    for (long iIn = 0; iIn < nIn; ++iIn) {
+      for (long iOut = 0; iOut < nOut; ++iOut) {
+        long jLink = NN_NBPARAMLINK * iLink;
         VecSet(nn->_links, jLink, iLink);
         VecSet(nn->_links, jLink + 1, iIn + shiftIn);
         VecSet(nn->_links, jLink + 2, iOut + shiftOut);
@@ -218,10 +218,10 @@ NeuraNet* NeuraNetCreateConvolution(const VecShort* const dimIn,
     sprintf(NeuraNetErr->_msg, "'dimIn' is null");
     PBErrCatch(NeuraNetErr);
   }
-  for (int iDim = VecGetDim(dimIn); iDim--;)
+  for (long iDim = VecGetDim(dimIn); iDim--;)
     if (VecGet(dimIn, iDim) <= 0) {
       NeuraNetErr->_type = PBErrTypeInvalidArg;
-      sprintf(NeuraNetErr->_msg, "'dimIn' %dth dim is invalid (%d>0)",
+      sprintf(NeuraNetErr->_msg, "'dimIn' %ldth dim is invalid (%d>0)",
         iDim, VecGet(dimIn, iDim));
       PBErrCatch(NeuraNetErr);
     }
@@ -237,14 +237,14 @@ NeuraNet* NeuraNetCreateConvolution(const VecShort* const dimIn,
   }
   if (VecGetDim(dimCell) != VecGetDim(dimIn)) {
     NeuraNetErr->_type = PBErrTypeNullPointer;
-    sprintf(NeuraNetErr->_msg, "'dimCell' 's dim is invalid (%d==%d)",
+    sprintf(NeuraNetErr->_msg, "'dimCell' 's dim is invalid (%ld==%ld)",
       VecGetDim(dimCell), VecGetDim(dimIn));
     PBErrCatch(NeuraNetErr);
   }
-  for (int iDim = VecGetDim(dimCell); iDim--;)
+  for (long iDim = VecGetDim(dimCell); iDim--;)
     if (VecGet(dimCell, iDim) <= 0) {
       NeuraNetErr->_type = PBErrTypeInvalidArg;
-      sprintf(NeuraNetErr->_msg, "'dimCell' %dth dim is invalid (%d>0)",
+      sprintf(NeuraNetErr->_msg, "'dimCell' %ldth dim is invalid (%d>0)",
         iDim, VecGet(dimCell, iDim));
       PBErrCatch(NeuraNetErr);
     }
@@ -257,18 +257,18 @@ NeuraNet* NeuraNetCreateConvolution(const VecShort* const dimIn,
 #endif
   // Declare a variable to memorize the nb of input, hidden values, 
   // bases and links
-  int nbIn = 0;
-  int nbHiddenVal = 0;
-  int nbBases = 0;
-  int nbLinks = 0;
+  long nbIn = 0;
+  long nbHiddenVal = 0;
+  long nbBases = 0;
+  long nbLinks = 0;
   // Calculate the number of inputs
   nbIn = 1;
-  for (int iDim = VecGetDim(dimIn); iDim--;)
+  for (long iDim = VecGetDim(dimIn); iDim--;)
     nbIn *= VecGet(dimIn, iDim);
   // Calculate the number of bases, links and hidden values
   // Declare a variable to memorize the number of links per cell
-  int nbLinkPerCell = 1;
-  for (int iDim = VecGetDim(dimCell); iDim--;)
+  long nbLinkPerCell = 1;
+  for (long iDim = VecGetDim(dimCell); iDim--;)
     nbLinkPerCell *= VecGet(dimCell, iDim);
   // Declare a variable to memorize the position of the convolution
   // cell in the current convolution layer
@@ -278,20 +278,19 @@ NeuraNet* NeuraNetCreateConvolution(const VecShort* const dimIn,
   // Declare variables to memorize the dimension and size of the input 
   // layer at current convolution level
   VecShort* curDimIn = VecClone(dimIn);
-  int sizeLayerIn = 1;
-  for (int iDim = VecGetDim(curDimIn); iDim--;) {
+  long sizeLayerIn = 1;
+  for (long iDim = VecGetDim(curDimIn); iDim--;)
     sizeLayerIn *= VecGet(curDimIn, iDim);
-  }
   // Declare variables to memorize the dimension and size of the 
   // output layer at current convolution level
   VecShort* curDimOut = VecClone(curDimIn);
-  int sizeLayerOut = 1;
-  for (int iDim = VecGetDim(curDimOut); iDim--;) {
+  long sizeLayerOut = 1;
+  for (long iDim = VecGetDim(curDimOut); iDim--;) {
     VecSetAdd(curDimOut, iDim, -1 * VecGet(dimCell, iDim) + 1);
     sizeLayerOut *= VecGet(curDimOut, iDim);
   }
   // Loop on convolution levels
-  for (int iConv = 0; iConv < depthConv; ++iConv) {
+  for (long iConv = 0; iConv < depthConv; ++iConv) {
     // Update the number of bases
     nbBases += nbLinkPerCell;
     // Update the number of hidden values
@@ -304,7 +303,7 @@ NeuraNet* NeuraNetCreateConvolution(const VecShort* const dimIn,
       VecCopy(curDimIn, curDimOut);
       sizeLayerIn = sizeLayerOut;
       sizeLayerOut = 1;
-      for (int iDim = VecGetDim(curDimOut); iDim--;) {
+      for (long iDim = VecGetDim(curDimOut); iDim--;) {
         VecSetAdd(curDimOut, iDim, -1 * VecGet(dimCell, iDim) + 1);
         sizeLayerOut *= VecGet(curDimOut, iDim);
       }
@@ -314,49 +313,50 @@ NeuraNet* NeuraNetCreateConvolution(const VecShort* const dimIn,
   nbHiddenVal *= thickConv;
   nbBases *= thickConv;
   nbLinks *= thickConv;
-  int nbBasesConv = nbBases;
+  long nbBasesConv = nbBases;
   // Add the links and bases for the fully connected layer toward output
   nbBases += sizeLayerOut * thickConv * nbOutput;
   nbLinks += sizeLayerOut * thickConv * nbOutput;
   // Create the NeuraNet
   NeuraNet* nn = 
     NeuraNetCreate(nbIn, nbOutput, nbHiddenVal, nbBases, nbLinks);
-  *(int*)&(nn->_nbBasesConv) = nbBasesConv;
-  *(int*)&(nn->_nbBasesCellConv) = nbLinkPerCell;
+  *(long*)&(nn->_nbBasesConv) = nbBasesConv;
+  *(long*)&(nn->_nbBasesCellConv) = nbLinkPerCell;
   // Declare variables to create the links
-  VecShort* links = VecShortCreate(nbLinks * NN_NBPARAMLINK);
+  VecLong* links = VecLongCreate(nbLinks * NN_NBPARAMLINK);
   // Declare a variable to memorize the index of the currenlty 
   // created link
-  int iLink = 0;
+  long iLink = 0;
   // Reset the dimension and size of the input layer at current 
   // convolution level
   VecCopy(curDimIn, dimIn);
   sizeLayerIn = 1;
-  for (int iDim = VecGetDim(curDimIn); iDim--;) {
+  for (long iDim = VecGetDim(curDimIn); iDim--;) {
     sizeLayerIn *= VecGet(curDimIn, iDim);
   }
   // Reset the dimension and size of the output layer at current 
   // convolution level
   VecCopy(curDimOut, dimIn);
   sizeLayerOut = 1;
-  for (int iDim = VecGetDim(curDimOut); iDim--;) {
+  for (long iDim = VecGetDim(curDimOut); iDim--;) {
     VecSetAdd(curDimOut, iDim, -1 * VecGet(dimCell, iDim) + 1);
     sizeLayerOut *= VecGet(curDimOut, iDim);
   }
   // Declare variables to memorize the index of the beginning of the
   // input and output layer and base functions at current convolution 
   // level
-  int* iStartBase = PBErrMalloc(NeuraNetErr, sizeof(int) * thickConv);
-  int* iStartLayerIn = PBErrMalloc(NeuraNetErr, sizeof(int) * thickConv);
-  int* iStartLayerOut = PBErrMalloc(NeuraNetErr, 
-    sizeof(int) * thickConv);
-  for (int iThick = 0; iThick < thickConv; ++iThick) {
+  long* iStartBase = PBErrMalloc(NeuraNetErr, sizeof(long) * thickConv);
+  long* iStartLayerIn = PBErrMalloc(NeuraNetErr, 
+    sizeof(long) * thickConv);
+  long* iStartLayerOut = PBErrMalloc(NeuraNetErr, 
+    sizeof(long) * thickConv);
+  for (long iThick = 0; iThick < thickConv; ++iThick) {
     iStartLayerIn[iThick] = 0;
     iStartLayerOut[iThick] = sizeLayerIn + iThick * sizeLayerOut;
     iStartBase[iThick] = iThick * nbLinkPerCell;
   }
   // Loop on convolution levels
-  for (int iConv = 0; iConv < depthConv; ++iConv) {
+  for (long iConv = 0; iConv < depthConv; ++iConv) {
     // Reset the position of the convolution cell in the input layer
     VecSetNull(pos);
     // Loop on position of the convolution cell at the current 
@@ -364,10 +364,10 @@ NeuraNet* NeuraNetCreateConvolution(const VecShort* const dimIn,
     do {
       do {
         // Loop on convolution in parallel
-        for (int iThick = 0; iThick < thickConv; ++iThick) {
+        for (long iThick = 0; iThick < thickConv; ++iThick) {
           // Declare a variable to memorize the index of the input of the
           // current link
-          int iInput = 0;
+          long iInput = 0;
           for (int iDim = VecGetDim(curDimIn); iDim--;) {
             iInput *= VecGet(curDimIn, iDim);
             iInput += VecGet(posCell, iDim) + VecGet(pos, iDim);
@@ -375,16 +375,16 @@ NeuraNet* NeuraNetCreateConvolution(const VecShort* const dimIn,
           iInput += iStartLayerIn[iThick];
           // Declare a variable to memorize the index of the output of 
           // the current link
-          int iOutput = 0;
-          for (int iDim = VecGetDim(curDimOut); iDim--;) {
+          long iOutput = 0;
+          for (long iDim = VecGetDim(curDimOut); iDim--;) {
             iOutput *= VecGet(curDimOut, iDim);
             iOutput += VecGet(pos, iDim);
           }
           iOutput += iStartLayerOut[iThick];
           // Declare a variable to memorize the index of the base of the
           // current link
-          int iBase = 0;
-          for (int iDim = VecGetDim(posCell); iDim--;) {
+          long iBase = 0;
+          for (long iDim = VecGetDim(posCell); iDim--;) {
             iBase *= VecGet(dimCell, iDim);
             iBase += VecGet(posCell, iDim);
           }
@@ -404,14 +404,14 @@ NeuraNet* NeuraNetCreateConvolution(const VecShort* const dimIn,
       VecCopy(curDimIn, curDimOut);
       sizeLayerIn = sizeLayerOut;
       sizeLayerOut = 1;
-      for (int iDim = VecGetDim(curDimOut); iDim--;) {
+      for (long iDim = VecGetDim(curDimOut); iDim--;) {
         VecSetAdd(curDimOut, iDim, -1 * VecGet(dimCell, iDim) + 1);
         sizeLayerOut *= VecGet(curDimOut, iDim);
       }
     }
     // Update the start index of input and output layers and bases
     // for each convolution in parallel
-    for (int iThick = 0; iThick < thickConv; ++iThick) {
+    for (long iThick = 0; iThick < thickConv; ++iThick) {
       iStartLayerIn[iThick] = iStartLayerOut[iThick];
       iStartLayerOut[iThick] = iStartLayerIn[0] + 
         thickConv * sizeLayerIn + iThick * sizeLayerOut;
@@ -422,20 +422,20 @@ NeuraNet* NeuraNetCreateConvolution(const VecShort* const dimIn,
   // Set the links of the last fully connected layer between last 
   // convolution and NeuraNet output
   // Declare a variable to remember the index of the base
-  int iBase = iStartBase[0];
+  long iBase = iStartBase[0];
   // Loop on the last output of convolution layer
-  for (int iLayerOut = 0; iLayerOut < sizeLayerOut; ++iLayerOut) {
+  for (long iLayerOut = 0; iLayerOut < sizeLayerOut; ++iLayerOut) {
     // Loop on parallel convolution
-    for (int iThick = 0; iThick < thickConv; ++iThick) {
+    for (long iThick = 0; iThick < thickConv; ++iThick) {
       // Loop on output of the NeuraNet
-      for (int iOut = 0; iOut < nbOutput; ++iOut) {
+      for (long iOut = 0; iOut < nbOutput; ++iOut) {
         // Declare a variable to memorize the index of the input of 
         // the link
-        int iInput = iStartLayerIn[0] + 
+        long iInput = iStartLayerIn[0] + 
           iLayerOut * thickConv + iThick;
         // Declare a variable to memorize the index of the output of 
         // the link
-        int iOutput = iOut + nbIn + nbHiddenVal;
+        long iOutput = iOut + nbIn + nbHiddenVal;
         // Set the link's parameters
         VecSet(links, iLink * NN_NBPARAMLINK, iBase);
         VecSet(links, iLink * NN_NBPARAMLINK + 1, iInput);
@@ -488,14 +488,14 @@ void NNEval(const NeuraNet* const that, const VecFloat* const input, VecFloat* c
   if (VecGetDim(input) != that->_nbInputVal) {
     NeuraNetErr->_type = PBErrTypeInvalidArg;
     sprintf(NeuraNetErr->_msg, 
-      "'input' 's dimension is invalid (%d!=%d)", 
+      "'input' 's dimension is invalid (%ld!=%d)", 
       VecGetDim(input), that->_nbInputVal);
     PBErrCatch(NeuraNetErr);
   }
   if (VecGetDim(output) != that->_nbOutputVal) {
     NeuraNetErr->_type = PBErrTypeInvalidArg;
     sprintf(NeuraNetErr->_msg, 
-      "'output' 's dimension is invalid (%d!=%d)", 
+      "'output' 's dimension is invalid (%ld!=%d)", 
       VecGetDim(output), that->_nbOutputVal);
     PBErrCatch(NeuraNetErr);
   }
@@ -508,18 +508,18 @@ void NNEval(const NeuraNet* const that, const VecFloat* const input, VecFloat* c
   if (VecGet(that->_links, 0) != -1) {
     // Declare two variables to memorize the starting index of hidden 
     // values and output values in the link definition
-    int startHid = NNGetNbInput(that);
-    int startOut = NNGetNbMaxHidden(that) + NNGetNbInput(that);
+    long startHid = NNGetNbInput(that);
+    long startOut = NNGetNbMaxHidden(that) + NNGetNbInput(that);
     // Declare a variable to memorize the previous link
-    int prevLink[2] = {-1, -1};
+    long prevLink[2] = {-1, -1};
     // Declare a variable to memorize the previous output value
     float prevOut = 1.0;
     // Loop on links
-    int iLink = 0;
+    long iLink = 0;
     while (iLink < NNGetNbMaxLinks(that) && 
       VecGet(that->_links, NN_NBPARAMLINK * iLink) != -1) {
       // Declare a variable for optimization
-      int jLink = NN_NBPARAMLINK * iLink;
+      long jLink = NN_NBPARAMLINK * iLink;
       // If this link has different input or output than previous link
       // and we are not on the first link
       if (iLink != 0 && 
@@ -528,11 +528,11 @@ void NNEval(const NeuraNet* const that, const VecFloat* const input, VecFloat* c
         // Add the previous output value to the output of the previous 
         // link
         if (prevLink[1] < startOut) {
-          int iVal = prevLink[1] - startHid;
+          long iVal = prevLink[1] - startHid;
           float nVal = MIN(1.0, MAX(-1.0, VecGet(that->_hidVal, iVal) + prevOut));
           VecSet(that->_hidVal, iVal, nVal);
         } else { 
-          int iVal = prevLink[1] - startOut;
+          long iVal = prevLink[1] - startOut;
           float nVal = VecGet(output, iVal) + prevOut;
           VecSet(output, iVal, nVal);
         }
@@ -558,11 +558,11 @@ void NNEval(const NeuraNet* const that, const VecFloat* const input, VecFloat* c
     }
     // Update the output of the last link
     if (prevLink[1] < startOut) {
-      int iVal = prevLink[1] - startHid;
+      long iVal = prevLink[1] - startHid;
       float nVal = MIN(1.0, MAX(-1.0, VecGet(that->_hidVal, iVal) + prevOut));
       VecSet(that->_hidVal, iVal, nVal);
     } else { 
-      int iVal = prevLink[1] - startOut;
+      long iVal = prevLink[1] - startOut;
       float nVal = VecGet(output, iVal) + prevOut;
       VecSet(output, iVal, nVal);
     }
@@ -589,13 +589,13 @@ JSONNode* NNEncodeAsJSON(const NeuraNet* const that) {
   sprintf(val, "%d", that->_nbOutputVal);
   JSONAddProp(json, "_nbOutputVal", val);
   // Encode the nbMaxHidVal
-  sprintf(val, "%d", that->_nbMaxHidVal);
+  sprintf(val, "%ld", that->_nbMaxHidVal);
   JSONAddProp(json, "_nbMaxHidVal", val);
   // Encode the nbMaxBases
-  sprintf(val, "%d", that->_nbMaxBases);
+  sprintf(val, "%ld", that->_nbMaxBases);
   JSONAddProp(json, "_nbMaxBases", val);
   // Encode the nbMaxLinks
-  sprintf(val, "%d", that->_nbMaxLinks);
+  sprintf(val, "%ld", that->_nbMaxLinks);
   JSONAddProp(json, "_nbMaxLinks", val);
   // Encode the bases
   JSONAddProp(json, "_bases", VecEncodeAsJSON(that->_bases));
@@ -640,19 +640,19 @@ bool NNDecodeAsJSON(NeuraNet** that, const JSONNode* const json) {
   if (prop == NULL) {
     return false;
   }
-  int nbMaxHidVal = atoi(JSONLabel(JSONValue(prop, 0)));
+  long nbMaxHidVal = atol(JSONLabel(JSONValue(prop, 0)));
   // Decode the nbMaxBases
   prop = JSONProperty(json, "_nbMaxBases");
   if (prop == NULL) {
     return false;
   }
-  int nbMaxBases = atoi(JSONLabel(JSONValue(prop, 0)));
+  long nbMaxBases = atol(JSONLabel(JSONValue(prop, 0)));
   // Decode the nbMaxLinks
   prop = JSONProperty(json, "_nbMaxLinks");
   if (prop == NULL) {
     return false;
   }
-  int nbMaxLinks = atoi(JSONLabel(JSONValue(prop, 0)));
+  long nbMaxLinks = atol(JSONLabel(JSONValue(prop, 0)));
   // Allocate memory
   *that = NeuraNetCreate(nbInputVal, nbOutputVal, nbMaxHidVal, 
     nbMaxBases, nbMaxLinks);
@@ -753,9 +753,9 @@ void NNPrintln(const NeuraNet* const that, FILE* const stream) {
 #endif
   fprintf(stream, "nbInput: %d\n", that->_nbInputVal);
   fprintf(stream, "nbOutput: %d\n", that->_nbOutputVal);
-  fprintf(stream, "nbHidden: %d\n", that->_nbMaxHidVal);
-  fprintf(stream, "nbMaxBases: %d\n", that->_nbMaxBases);
-  fprintf(stream, "nbMaxLinks: %d\n", that->_nbMaxLinks);
+  fprintf(stream, "nbHidden: %ld\n", that->_nbMaxHidVal);
+  fprintf(stream, "nbMaxBases: %ld\n", that->_nbMaxBases);
+  fprintf(stream, "nbMaxLinks: %ld\n", that->_nbMaxLinks);
   fprintf(stream, "bases: ");
   VecPrint(that->_bases, stream);
   fprintf(stream, "\n");
@@ -775,7 +775,7 @@ void NNPrintln(const NeuraNet* const that, FILE* const stream) {
 // sorted
 // Each link is defined by (base index, input index, output index)
 // If base index equals -1 it means the link is inactive
-void NNSetLinks(NeuraNet* const that, VecShort* const links) {
+void NNSetLinks(NeuraNet* const that, VecLong* const links) {
 #if BUILDMODE == 0
   if (that == NULL) {
     NeuraNetErr->_type = PBErrTypeNullPointer;
@@ -790,7 +790,7 @@ void NNSetLinks(NeuraNet* const that, VecShort* const links) {
   if (VecGetDim(links) != that->_nbMaxLinks * NN_NBPARAMLINK) {
     NeuraNetErr->_type = PBErrTypeInvalidArg;
     sprintf(NeuraNetErr->_msg, 
-      "'links' 's dimension is invalid (%d!=%d)", 
+      "'links' 's dimension is invalid (%ld!=%ld)", 
       VecGetDim(links), that->_nbMaxLinks);
     PBErrCatch(NeuraNetErr);
   }
@@ -798,20 +798,20 @@ void NNSetLinks(NeuraNet* const that, VecShort* const links) {
   // Declare a GSet to sort the links
   GSet set = GSetCreateStatic();
   // Declare a variable to memorize the maximum id
-  int maxId = NNGetNbInput(that) + NNGetNbMaxHidden(that) + 
+  long maxId = NNGetNbInput(that) + NNGetNbMaxHidden(that) + 
     NNGetNbOutput(that);
   // Loop on links
-  for (int iLink = 0; iLink < NNGetNbMaxLinks(that) * NN_NBPARAMLINK; 
+  for (long iLink = 0; iLink < NNGetNbMaxLinks(that) * NN_NBPARAMLINK; 
     iLink += NN_NBPARAMLINK) {
     // If this link is active
     if (VecGet(links, iLink) != -1) {
       // Declare two variable to memorize the effective input and output
-      int in = VecGet(links, iLink + 1);
-      int out = VecGet(links, iLink + 2);
+      long in = VecGet(links, iLink + 1);
+      long out = VecGet(links, iLink + 2);
       // If the input is greater than the output
       if (in > out) {
         // Swap the input and output
-        int tmp = in;
+        long tmp = in;
         in = out;
         out = tmp;
       }
@@ -821,14 +821,14 @@ void NNSetLinks(NeuraNet* const that, VecShort* const links) {
     }
   }
   // Declare a variable to memorize the number of active links
-  int nbLink = GSetNbElem(&set);
+  long nbLink = GSetNbElem(&set);
   // If there are active links
   if (nbLink > 0) {
     // loop on active sorted links
     GSetIterForward iter = GSetIterForwardCreateStatic(&set);
-    int iLink = 0;
+    long iLink = 0;
     do {
-      short *link = GSetIterGet(&iter);
+      long *link = GSetIterGet(&iter);
       VecSet(that->_links, iLink * NN_NBPARAMLINK, link[0]);
       if (link[1] <= link[2]) {
         VecSet(that->_links, iLink * NN_NBPARAMLINK + 1, link[1]);
@@ -841,7 +841,7 @@ void NNSetLinks(NeuraNet* const that, VecShort* const links) {
     } while (GSetIterStep(&iter));
   }
   // Reset the inactive links
-  for (int iLink = nbLink; iLink < NNGetNbMaxLinks(that); ++iLink)
+  for (long iLink = nbLink; iLink < NNGetNbMaxLinks(that); ++iLink)
     VecSet(that->_links, iLink * NN_NBPARAMLINK, -1);
   // Free the memory
   GSetFlush(&set);
