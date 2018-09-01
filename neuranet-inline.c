@@ -8,8 +8,7 @@
 // 'param' is an array of 3 float all in [-1,1]
 // 'x' is the input value
 // NNBaseFun(param,x)=
-// {tan(param[0]*NN_THETA)*(x+param[1])+param[2]}[-1,1]
-// The generic base function returns a value in [-1,1]
+// tan(param[0]*NN_THETA)*(x+param[1])+param[2]
 #if BUILDMODE != 0
 inline
 #endif
@@ -21,8 +20,6 @@ float NNBaseFun(const float* const param, const float x) {
     PBErrCatch(NeuraNetErr);
   }
 #endif
-  //return MIN(1.0, MAX(-1.0, 
-  //  tan(param[0] * NN_THETA) * (x + param[1]) + param[2]));
   return tan(param[0] * NN_THETA) * (x + param[1]) + param[2];
 }
 

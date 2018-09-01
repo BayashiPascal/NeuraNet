@@ -23,11 +23,10 @@
 // ================ Functions declaration ====================
 
 // Generic base function for the NeuraNet
-// 'param' is an array of NN_NBPARAMBASE float all in [-1,1]
-// 'x' is the input value, in [-1,1]
+// 'param' is an array of 3 float all in [-1,1]
+// 'x' is the input value
 // NNBaseFun(param,x)=
-// {tan(param[0]*NN_THETA)*(x+param[1])+param[2]}[-1,1]
-// The generic base function returns a value in [-1,1]
+// tan(param[0]*NN_THETA)*(x+param[1])+param[2]
 #if BUILDMODE != 0
 inline
 #endif

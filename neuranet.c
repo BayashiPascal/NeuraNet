@@ -368,7 +368,7 @@ NeuraNet* NeuraNetCreateConvolution(const VecShort* const dimIn,
           // Declare a variable to memorize the index of the input of the
           // current link
           long iInput = 0;
-          for (int iDim = VecGetDim(curDimIn); iDim--;) {
+          for (long iDim = VecGetDim(curDimIn); iDim--;) {
             iInput *= VecGet(curDimIn, iDim);
             iInput += VecGet(posCell, iDim) + VecGet(pos, iDim);
           }
@@ -559,7 +559,8 @@ void NNEval(const NeuraNet* const that, const VecFloat* const input, VecFloat* c
     // Update the output of the last link
     if (prevLink[1] < startOut) {
       long iVal = prevLink[1] - startHid;
-      float nVal = MIN(1.0, MAX(-1.0, VecGet(that->_hidVal, iVal) + prevOut));
+      float nVal = 
+        MIN(1.0, MAX(-1.0, VecGet(that->_hidVal, iVal) + prevOut));
       VecSet(that->_hidVal, iVal, nVal);
     } else { 
       long iVal = prevLink[1] - startOut;
@@ -805,7 +806,7 @@ void NNSetLinks(NeuraNet* const that, VecLong* const links) {
     iLink += NN_NBPARAMLINK) {
     // If this link is active
     if (VecGet(links, iLink) != -1) {
-      // Declare two variable to memorize the effective input and output
+      // Declare two variables to memorize the effective input and output
       long in = VecGet(links, iLink + 1);
       long out = VecGet(links, iLink + 2);
       // If the input is greater than the output
