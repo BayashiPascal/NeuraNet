@@ -14,4 +14,4 @@ NeuraNet has been validated on
 * the Abalone data set : regression, 10 inputs, 1 output, 3000 learning samples, 1177 validation samples, http://www.cs.toronto.edu/~delve/data/abalone/desc.html , 25.7% correct regression, 66.5% +-1 error, 83.3% +-2, 91.5% +-3, 94.8% +-4, 96.9% +-5, 98.1% +-6, 99.2% +-7, 99.7% +-8, in 19m:49s 
 * the Arrhythmia data set: classification, 279 inputs, 16 outputs, 300 learning samples, 152 validation samples, https://archive.ics.uci.edu/ml/datasets/arrhythmia , 41.4% correct classification in 02:04:49s (68.6% on the learning samples)
 * the Wisconsin Diagnostic Breast Cancer data set: classification, 30 inputs, 2 outputs, 400 learning samples, 169 validation samples, https://archive.ics.uci.edu/ml/datasets/Breast+Cancer+Wisconsin+%28Diagnostic%29 , 98.2% correct classification in 01:42s
- 
+* the MNIST data set: classification, 784 inputs, 9 outputs, 50000 learning samples, 10000 validation samples,  http://yann.lecun.com/exdb/mnist/ , 81.1% correct classification in 01:01:30:11s
