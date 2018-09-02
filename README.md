@@ -15,3 +15,4 @@ NeuraNet has been validated on
 * the Arrhythmia data set: classification, 279 inputs, 16 outputs, 300 learning samples, 152 validation samples, https://archive.ics.uci.edu/ml/datasets/arrhythmia , 41.4% correct classification in 02:04:49s (68.6% on the learning samples)
 * the Wisconsin Diagnostic Breast Cancer data set: classification, 30 inputs, 2 outputs, 400 learning samples, 169 validation samples, https://archive.ics.uci.edu/ml/datasets/Breast+Cancer+Wisconsin+%28Diagnostic%29 , 98.2% correct classification in 01:42s
 * the MNIST data set: classification, 784 inputs, 9 outputs, 50000 learning samples, 10000 validation samples,  http://yann.lecun.com/exdb/mnist/ , 81.1% correct classification in 01:01:30:11s
+* the ORHD data set: classification, 64 inputs, 9 outputs, 3823 learning samples, 1797 validation samples, https://archive.ics.uci.edu/ml/datasets/Optical+Recognition+of+Handwritten+Digits , 88.2% correct classification in 12:05:51s
