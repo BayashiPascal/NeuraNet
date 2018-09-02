@@ -286,6 +286,11 @@ void UnitTestNeuraNetGetSet() {
       sprintf(NeuraNetErr->_msg, "NNSetLinks failed");
       PBErrCatch(NeuraNetErr);
     }
+  if (NNGetNbActiveLinks(nn) != 4) {
+    NeuraNetErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(NeuraNetErr->_msg, "NNGetNbActiveLinks failed");
+    PBErrCatch(NeuraNetErr);
+  }
   VecFree(&links);
   NeuraNetFree(&nn);
   printf("UnitTestNeuraNetGetSet OK\n");
@@ -399,6 +404,12 @@ void UnitTestNeuraNetEvalPrint() {
       }
     }
   }
+  char* cloudUrl = "./cloud.txt";
+  if (NNSaveLinkAsCloudGraph(nn, cloudUrl) == false) {
+    NeuraNetErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(NeuraNetErr->_msg, "NNSaveLinkAsCloudGraph failed");
+    PBErrCatch(NeuraNetErr);
+  }
   NeuraNetFree(&nn);
   printf("UnitTestNeuraNetEvalPrint OK\n");
 }
@@ -486,7 +497,7 @@ void UnitTestNeuraNet() {
   UnitTestNeuraNetSaveLoad();
   UnitTestNeuraNetEvalPrint();
 #ifdef GENALG_H
-  UnitTestNeuraNetGA();
+  //UnitTestNeuraNetGA();
 #endif
   
   printf("UnitTestNeuraNet OK\n");

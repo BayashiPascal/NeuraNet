@@ -2,7 +2,7 @@
 # 0: development (max safety, no optimisation)
 # 1: release (min safety, optimisation)
 # 2: fast and furious (no safety, optimisation)
-BUILD_MODE?=1
+BUILD_MODE?=0
 
 all: main
 	
@@ -24,3 +24,5 @@ $($(repo)_EXENAME).o: \
 		$($(repo)_EXE_DEP)
 	$(COMPILER) $(BUILD_ARG) $($(repo)_BUILD_ARG) `echo "$($(repo)_INC_DIR)" | tr ' ' '\n' | sort -u` -c $($(repo)_DIR)/$($(repo)_EXENAME).c
 	
+cloud: cloud.txt
+	../CloudGraph/cloudGraph -file ./cloud.txt -tga cloud.tga -familyLabel -circle -curved 0.5

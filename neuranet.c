@@ -848,4 +848,113 @@ void NNSetLinks(NeuraNet* const that, VecLong* const links) {
   GSetFlush(&set);
 }
 
+// Save the links of the NeuraNet 'that' into the file at 'url' in a 
+// format readable by CloudGraph
+// Return true if we could save, else false
+bool NNSaveLinkAsCloudGraph(const NeuraNet* const that, 
+  const char* url) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    NeuraNetErr->_type = PBErrTypeNullPointer;
+    sprintf(NeuraNetErr->_msg, "'that' is null");
+    PBErrCatch(NeuraNetErr);
+  }
+  if (url == NULL) {
+    NeuraNetErr->_type = PBErrTypeNullPointer;
+    sprintf(NeuraNetErr->_msg, "'url' is null");
+    PBErrCatch(NeuraNetErr);
+  }
+#endif
+  // Declare a flag to memorize the returned value
+  bool ret = true;
+  // Open the file
+  FILE* cloud = fopen(url, "w");
+  // If we could open the file
+  if (cloud != NULL) {
+    // Save the categories
+    if (!PBErrPrintf(NeuraNetErr, cloud, "%s", "3\n")) {
+      fclose(cloud);
+      return false;
+    }
+    if (!PBErrPrintf(NeuraNetErr, cloud, "%s", "0 255 0 0 Input\n")) {
+      fclose(cloud);
+      return false;
+    }
+    if (!PBErrPrintf(NeuraNetErr, cloud, "%s", "1 0 255 0 Hidden\n")) {
+      fclose(cloud);
+      return false;
+    }
+    if (!PBErrPrintf(NeuraNetErr, cloud, "%s", "2 0 0 255 Output\n")) {
+      fclose(cloud);
+      return false;
+    }
+    // Save the nb of nodes
+    if (!PBErrPrintf(NeuraNetErr, cloud, "%ld\n", 
+      NNGetNbInput(that) + NNGetNbMaxHidden(that) + 
+      NNGetNbOutput(that))) {
+      fclose(cloud);
+      return false;
+    }
+    // Save the input nodes
+    for (long iNode = 0; iNode < NNGetNbInput(that); ++iNode) {
+      if (!PBErrPrintf(NeuraNetErr, cloud, "%ld 0 ", iNode)) {
+        fclose(cloud);
+        return false;
+      }
+      if (!PBErrPrintf(NeuraNetErr, cloud, "%ld\n", iNode)) {
+        fclose(cloud);
+        return false;
+      }
+    }
+    // Save the hidden nodes
+    for (long iNode = 0; iNode < NNGetNbMaxHidden(that); ++iNode) {
+      long jNode = iNode + NNGetNbInput(that);
+      if (!PBErrPrintf(NeuraNetErr, cloud, "%ld 1 ", jNode)) {
+        fclose(cloud);
+        return false;
+      }
+      if (!PBErrPrintf(NeuraNetErr, cloud, "%ld\n", jNode)) {
+        fclose(cloud);
+        return false;
+      }
+    }
+    // Save the output nodes
+    for (long iNode = 0; iNode < NNGetNbOutput(that); ++iNode) {
+      long jNode = iNode + NNGetNbInput(that) + NNGetNbMaxHidden(that);
+      if (!PBErrPrintf(NeuraNetErr, cloud, "%ld 2 ", jNode)) {
+        fclose(cloud);
+        return false;
+      }
+      if (!PBErrPrintf(NeuraNetErr, cloud, "%ld\n", jNode)) {
+        fclose(cloud);
+        return false;
+      }
+    }
+    // Save the links
+    PBErrPrintf(NeuraNetErr, cloud, "%ld\n", NNGetNbActiveLinks(that));
+    for (long iLink = 0; iLink < NNGetNbMaxLinks(that); ++iLink) {
+      // If this link is active
+      if (VecGet(NNLinks(that), iLink * NN_NBPARAMLINK) != -1) {
+        if (!PBErrPrintf(NeuraNetErr, cloud, "%ld ", 
+          VecGet(NNLinks(that), iLink * NN_NBPARAMLINK + 1))) {
+          fclose(cloud);
+          return false;
+        }
+        if (!PBErrPrintf(NeuraNetErr, cloud, "%ld\n", 
+          VecGet(NNLinks(that), iLink * NN_NBPARAMLINK + 2))) {
+          fclose(cloud);
+          return false;
+        }
+      }
+    }
+    // Close the file
+    fclose(cloud);
+  // Else, we coudln't open the file
+  } else {
+    // Set the flag
+    ret = false;
+  }
+  // Return the flag
+  return ret;
+}
 

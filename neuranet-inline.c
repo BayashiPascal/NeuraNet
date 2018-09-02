@@ -253,4 +253,29 @@ void NNBasesSet(NeuraNet* const that, const long iBase,
   VecSet(that->_bases, iBase, base);
 }
 
+// Get the number of active links in the NeuraNet 'that'
+#if BUILDMODE != 0
+inline
+#endif
+long NNGetNbActiveLinks(const NeuraNet* const that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    NeuraNetErr->_type = PBErrTypeNullPointer;
+    sprintf(NeuraNetErr->_msg, "'that' is null");
+    PBErrCatch(NeuraNetErr);
+  }
+#endif
+  // Declare a variable to memorize the result
+  long nb = 0;
+  // Loop on links
+  for (long iLink = NNGetNbMaxLinks(that); iLink--;) {
+    // If this link is active
+    if (VecGet(NNLinks(that), iLink * NN_NBPARAMLINK) != -1)
+      // Increment the number of active links
+      ++nb;
+  }
+  // Return the result
+  return nb;
+}
+
 

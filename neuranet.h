@@ -260,6 +260,17 @@ bool NNLoad(NeuraNet** that, FILE* const stream);
 // Print the NeuraNet 'that' to the stream 'stream'
 void NNPrintln(const NeuraNet* const that, FILE* const stream);
 
+// Get the number of active links in the NeuraNet 'that'
+#if BUILDMODE != 0
+inline
+#endif
+long NNGetNbActiveLinks(const NeuraNet* const that);
+
+// Save the links of the NeuraNet 'that' into the file at 'url' in a 
+// format readable by CloudGraph
+// Return true if we could save, else false
+bool NNSaveLinkAsCloudGraph(const NeuraNet* const that, const char* url);
+
 // ================= Interface with library GenAlg ==================
 // To use the following functions the user must include the header 
 // 'genalg.h' before the header 'neuranet.h'
