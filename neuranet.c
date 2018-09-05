@@ -958,3 +958,82 @@ bool NNSaveLinkAsCloudGraph(const NeuraNet* const that,
   return ret;
 }
 
+// Get the Simpson's diversity index of the hidden values of the 
+// NeuraNet 'that'
+// Return value in [0.0, 1.0], 0.0 means no diversity, 1.0 means max 
+// diversity 
+float NNGetHiddenValSimpsonDiv(const NeuraNet* const that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    NeuraNetErr->_type = PBErrTypeNullPointer;
+    sprintf(NeuraNetErr->_msg, "'that' is null");
+    PBErrCatch(NeuraNetErr);
+  }
+#endif
+  // Declare a variable to emmorize the result
+  float div = 0.0;
+  // Declare a variable to check if a link output to a hidden value
+  long iMaxHidden = NNGetNbInput(that) + NNGetNbMaxHidden(that);
+  // Declare two variables for calculation
+  VecFloat* nb = VecFloatCreate(iMaxHidden);
+  float tot = 0.0;
+  // Loop on links
+  for (int iLink = NNGetNbMaxLinks(that); iLink--;) {
+    // If this link is active and its ouput is a hidden value
+    if (VecGet(NNLinks(that), iLink * NN_NBPARAMLINK) != -1 &&
+      VecGet(NNLinks(that), iLink * NN_NBPARAMLINK + 2) < iMaxHidden) {
+      // Calculate the diversity
+      ++tot;
+      VecSetAdd(nb, VecGet(NNLinks(that), 
+        iLink * NN_NBPARAMLINK + 1), 1.0);
+    }
+  }
+  // Calculate the diversity
+  if (tot >= 2.0) {
+    for (int iLink = iMaxHidden; iLink--;) {
+      div += VecGet(nb, iLink) * (VecGet(nb, iLink) - 1.0);
+    }
+    div = 1.0 - div / (tot * (tot - 1.0));
+    div *= tot / (float)NNGetNbMaxLinks(that);
+  }
+  // Free memory
+  VecFree(&nb);
+  // Return the diversity
+  return MIN(1.0, MAX(-1.0, div));
+}
+
+// Prune the NeuraNet 'that' by removing the useless links (those with 
+// no influence on outputs
+void NNPrune(const NeuraNet* const that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    NeuraNetErr->_type = PBErrTypeNullPointer;
+    sprintf(NeuraNetErr->_msg, "'that' is null");
+    PBErrCatch(NeuraNetErr);
+  }
+#endif
+  // Declare a variable to memorise the start index of output
+  long startOut = NNGetNbInput(that) + NNGetNbMaxHidden(that);
+  // Loop on links
+  for (int iLink = NNGetNbMaxLinks(that); iLink--;) {
+    // If the output of this link is not an output and it's active
+    if (VecGet(NNLinks(that), iLink * NN_NBPARAMLINK) != -1 &&
+      VecGet(NNLinks(that), iLink * NN_NBPARAMLINK + 2) < startOut) {
+      // Search in following links one that use the output of this link
+      // as an input
+      bool flag = false;
+      for (int jLink = iLink + 1; 
+        !flag && jLink < NNGetNbMaxLinks(that); ++jLink) {
+        if (VecGet(NNLinks(that), iLink * NN_NBPARAMLINK + 2) ==
+          VecGet(NNLinks(that), jLink * NN_NBPARAMLINK + 1)) {
+          flag = true;
+        }
+      }
+      // If the output of this link is never used
+      if (!flag)
+        // Disactivate it
+        VecSet(that->_links, iLink * NN_NBPARAMLINK, -1);
+    }
+  }
+}
+

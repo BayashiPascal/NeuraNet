@@ -271,6 +271,16 @@ long NNGetNbActiveLinks(const NeuraNet* const that);
 // Return true if we could save, else false
 bool NNSaveLinkAsCloudGraph(const NeuraNet* const that, const char* url);
 
+// Get the Simpson's diversity index of the hidden values of the 
+// NeuraNet 'that'
+// Return value in [0.0, 1.0], 0.0 means no diversity, 1.0 means max 
+// diversity 
+float NNGetHiddenValSimpsonDiv(const NeuraNet* const that);
+
+// Prune the NeuraNet 'that' by removing the useless links (those with 
+// no influence on outputs
+void NNPrune(const NeuraNet* const that);
+
 // ================= Interface with library GenAlg ==================
 // To use the following functions the user must include the header 
 // 'genalg.h' before the header 'neuranet.h'

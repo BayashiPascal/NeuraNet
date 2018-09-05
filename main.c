@@ -200,6 +200,7 @@ void UnitTestNeuraNetCreateConvolution() {
       PBErrCatch(NeuraNetErr);
     }
   }
+  NNSaveLinkAsCloudGraph(nn, "./cloudConv.txt");
   NeuraNetFree(&nn);
   VecFree(&dimIn);
   VecFree(&dimCell);
@@ -296,7 +297,7 @@ void UnitTestNeuraNetGetSet() {
   printf("UnitTestNeuraNetGetSet OK\n");
 }
 
-void UnitTestNeuraNetSaveLoad() {
+void UnitTestNeuraNetSaveLoadPrune() {
   int nbIn = 10;
   int nbOut = 20;
   int nbHid = 30;
@@ -352,11 +353,19 @@ void UnitTestNeuraNetSaveLoad() {
     }
   fclose(fd);
   NeuraNetFree(&loaded);
+  NNPrune(nn);
+  short checkprune[15] = {-1,1,12,-1,2,35,-1,15,20,-1,15,20,-1,0,0};
+  for (int i = 15; i--;)
+    if (VecGet(NNLinks(nn), i) != checkprune[i]) {
+      NeuraNetErr->_type = PBErrTypeUnitTestFailed;
+      sprintf(NeuraNetErr->_msg, "NNPrune failed");
+      PBErrCatch(NeuraNetErr);
+    }
   NeuraNetFree(&nn);
-  printf("UnitTestNeuraNetSaveLoad OK\n");
+  printf("UnitTestNeuraNetSaveLoadPrune OK\n");
 }
 
-void UnitTestNeuraNetEvalPrint() {
+void UnitTestNeuraNetEvalPrintHiddenLinkSimpsonDiv() {
   int nbIn = 3;
   int nbOut = 3;
   int nbHid = 3;
@@ -410,8 +419,13 @@ void UnitTestNeuraNetEvalPrint() {
     sprintf(NeuraNetErr->_msg, "NNSaveLinkAsCloudGraph failed");
     PBErrCatch(NeuraNetErr);
   }
+  if (ISEQUALF(NNGetHiddenValSimpsonDiv(nn), 0.285714) == false) {
+    NeuraNetErr->_type = PBErrTypeUnitTestFailed;
+    sprintf(NeuraNetErr->_msg, "NNGetHiddenValSimpsonDiv failed");
+    PBErrCatch(NeuraNetErr);
+  }
   NeuraNetFree(&nn);
-  printf("UnitTestNeuraNetEvalPrint OK\n");
+  printf("UnitTestNeuraNetEvalPrintHiddenLinkSimpsonDiv OK\n");
 }
 
 #ifdef GENALG_H
@@ -494,10 +508,10 @@ void UnitTestNeuraNet() {
   UnitTestNeuraNetCreateFullyConnected();
   UnitTestNeuraNetCreateConvolution();
   UnitTestNeuraNetGetSet();
-  UnitTestNeuraNetSaveLoad();
-  UnitTestNeuraNetEvalPrint();
+  UnitTestNeuraNetSaveLoadPrune();
+  UnitTestNeuraNetEvalPrintHiddenLinkSimpsonDiv();
 #ifdef GENALG_H
-  //UnitTestNeuraNetGA();
+  UnitTestNeuraNetGA();
 #endif
   
   printf("UnitTestNeuraNet OK\n");
