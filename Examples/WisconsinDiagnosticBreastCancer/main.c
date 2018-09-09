@@ -32,7 +32,7 @@
 // Value of the NeuraNet above which the learning process stops
 #define STOP_LEARNING_AT_VAL 0.999
 // Number of epoch above which the learning process stops
-#define STOP_LEARNING_AT_EPOCH 5000
+#define STOP_LEARNING_AT_EPOCH 2000
 // Save NeuraNet in compact format
 #define COMPACT true
 
@@ -264,7 +264,7 @@ float Evaluate(const NeuraNet* const that,
     } else if (dataset->_cat == datalearn) {
       ++(countNg[dataset->_samples[iSample]._cat]);
     }
-    if (dataset->_cat != datalearn) {
+    /*if (dataset->_cat != datalearn) {
       printf("%010d %10s ", dataset->_samples[iSample]._id, 
         catNames[pred]);
       if (pred == dataset->_samples[iSample]._cat)
@@ -272,7 +272,7 @@ float Evaluate(const NeuraNet* const that,
       else
         printf("NG");
       printf("\n");
-    }
+    }*/
   }
   int nbCat = 0;
   for (int iCat = 0; iCat < NB_OUTPUT; ++iCat) {
@@ -342,7 +342,7 @@ NeuraNet* createNN(void) {
   return nn;
 }
 
-// Learn based on the SataSetCat 'cat'
+// Learn based on the DataSetCat 'cat'
 void Learn(DataSetCat cat) {
   // Init the random generator
   srandom(time(NULL));
@@ -386,12 +386,14 @@ void Learn(DataSetCat cat) {
     }
     fclose(fd);
   } else {
+    printf("Creating new GenAlg...\n");
+    fflush(stdout);
     ga = GenAlgCreate(ADN_SIZE_POOL, ADN_SIZE_ELITE, 
       NNGetGAAdnFloatLength(nn), NNGetGAAdnIntLength(nn));
     NNSetGABoundsBases(nn, ga);
     NNSetGABoundsLinks(nn, ga);
-    // Must be declared as a GenAlg applied to a NeuraNet or links will
-    // get corrupted
+    // Must be declared as a GenAlg applied to a NeuraNet with 
+    // convolution
     GASetTypeNeuraNet(ga, NB_INPUT, NB_MAXHIDDEN, NB_OUTPUT);
     GAInit(ga);
   }
@@ -409,8 +411,10 @@ void Learn(DataSetCat cat) {
       bestVal = Evaluate(nn, dataset);
       printf("Starting with best at %f.\n", bestVal);
       GenAlgAdn* adn = GAAdn(ga, 0);
-      VecCopy(adn->_adnF, nn->_bases);
-      VecCopy(adn->_adnI, nn->_links);
+      if (adn->_adnF)
+        VecCopy(adn->_adnF, nn->_bases);
+      if (adn->_adnI)
+        VecCopy(adn->_adnI, nn->_links);
     }
     fclose(fd);
   }
@@ -532,6 +536,7 @@ void Learn(DataSetCat cat) {
   int sec = (int)floor(elapsed);
   printf("\nLearning complete (in %d:%d:%d:%ds)\n", 
     day, hour, min, sec);
+  fflush(stdout);
   // Free memory
   NeuraNetFree(&nn);
   GenAlgFree(&ga);
