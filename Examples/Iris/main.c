@@ -20,11 +20,11 @@
 #define NB_INPUT 4
 #define NB_OUTPUT 3
 // Nb max of hidden values, links and base functions
-#define NB_MAXHIDDEN 20
-#define NB_MAXLINK 20
+#define NB_MAXHIDDEN 1
+#define NB_MAXLINK 50
 #define NB_MAXBASE NB_MAXLINK
 // Size of the gene pool and elite pool
-#define ADN_SIZE_POOL 100
+#define ADN_SIZE_POOL 500
 #define ADN_SIZE_ELITE 20
 // Initial best value during learning, must be lower than any
 // possible value returned by Evaluate()
@@ -32,7 +32,7 @@
 // Value of the NeuraNet above which the learning process stops
 #define STOP_LEARNING_AT_VAL 0.999
 // Number of epoch above which the learning process stops
-#define STOP_LEARNING_AT_EPOCH 2000
+#define STOP_LEARNING_AT_EPOCH 100
 // Save NeuraNet in compact format
 #define COMPACT true
 
@@ -251,7 +251,7 @@ NeuraNet* createNN(void) {
   return nn;
 }
 
-// Learn based on the SataSetCat 'cat'
+// Learn based on the DataSetCat 'cat'
 void Learn(DataSetCat cat) {
   // Init the random generator
   srandom(time(NULL));
@@ -295,12 +295,14 @@ void Learn(DataSetCat cat) {
     }
     fclose(fd);
   } else {
+    printf("Creating new GenAlg...\n");
+    fflush(stdout);
     ga = GenAlgCreate(ADN_SIZE_POOL, ADN_SIZE_ELITE, 
       NNGetGAAdnFloatLength(nn), NNGetGAAdnIntLength(nn));
     NNSetGABoundsBases(nn, ga);
     NNSetGABoundsLinks(nn, ga);
-    // Must be declared as a GenAlg applied to a NeuraNet or links will
-    // get corrupted
+    // Must be declared as a GenAlg applied to a NeuraNet with 
+    // convolution
     GASetTypeNeuraNet(ga, NB_INPUT, NB_MAXHIDDEN, NB_OUTPUT);
     GAInit(ga);
   }
@@ -318,8 +320,10 @@ void Learn(DataSetCat cat) {
       bestVal = Evaluate(nn, dataset);
       printf("Starting with best at %f.\n", bestVal);
       GenAlgAdn* adn = GAAdn(ga, 0);
-      VecCopy(adn->_adnF, nn->_bases);
-      VecCopy(adn->_adnI, nn->_links);
+      if (adn->_adnF)
+        VecCopy(adn->_adnF, nn->_bases);
+      if (adn->_adnI)
+        VecCopy(adn->_adnI, nn->_links);
     }
     fclose(fd);
   }
@@ -401,7 +405,7 @@ void Learn(DataSetCat cat) {
       fclose(fd);
     } else {
       fprintf(stderr, 
-        "Epoch %05lu: v%f a%03lu(%02d) kt%03lu ", 
+        "Epoch %05lu: v%f a%03lu(%03d) kt%03lu ", 
         GAGetCurEpoch(ga), curBest, ageBest, curBestI, 
         GAGetNbKTEvent(ga));
       fprintf(stderr, "(in %02d:%02d:%02d:%02ds)  \r", 
@@ -441,6 +445,7 @@ void Learn(DataSetCat cat) {
   int sec = (int)floor(elapsed);
   printf("\nLearning complete (in %d:%d:%d:%ds)\n", 
     day, hour, min, sec);
+  fflush(stdout);
   // Free memory
   NeuraNetFree(&nn);
   GenAlgFree(&ga);
