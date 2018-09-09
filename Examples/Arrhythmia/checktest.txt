@@ -1,0 +1,14 @@
+                                     Normal ( 75): 0.400000
+ Ischemic changes (Coronary Artery Disease) ( 16): 0.500000
+         Old Anterior Myocardial Infarction (  6): 0.166667
+         Old Inferior Myocardial Infarction (  1): 1.000000
+                           Sinus tachycardy (  6): 0.333333
+                           Sinus bradycardy (  7): 0.000000
+    Ventricular Premature Contraction (PVC) (  2): 0.000000
+     Supraventricular Premature Contraction (  1): 0.000000
+                   Left bundle branch block (  4): 0.500000
+                  Right bundle branch block ( 21): 0.476190
+                Left ventricule hypertrophy (  1): 1.000000
+             Atrial Fibrillation or Flutter (  2): 0.500000
+                                     Others ( 10): 0.000000
+Value: 0.368421
