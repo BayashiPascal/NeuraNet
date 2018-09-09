@@ -1,9 +1,0 @@
-Previous GenAlg reloaded.
-Starting with best at 0.960000.
-Learning...
-Will stop when curEpoch >= 6000 or bestVal >= 0.999000
-Will save the best NeuraNet in ./bestnn.txt at each improvement
-Improvement at epoch 4001: 0.966667 (in 0:0:0:0s)  
-Improvement at epoch 4049: 0.973333 (in 0:0:0:1s)  
-
-Learning complete (in 0:0:1:2s)
