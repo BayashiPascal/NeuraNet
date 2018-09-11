@@ -18,13 +18,13 @@
 #define SAVE_GA_EVERY 100
 // Nb input and output of the NeuraNet
 #define NB_INPUT 279
-#define NB_OUTPUT 16
+#define NB_OUTPUT 2
 // Nb max of hidden values, links and base functions
 #define NB_MAXHIDDEN 1
 #define NB_MAXLINK 1000
 #define NB_MAXBASE NB_MAXLINK
 // Size of the gene pool and elite pool
-#define ADN_SIZE_POOL 500
+#define ADN_SIZE_POOL 100
 #define ADN_SIZE_ELITE 20
 // Initial best value during learning, must be lower than any
 // possible value returned by Evaluate()
@@ -32,7 +32,7 @@
 // Value of the NeuraNet above which the learning process stops
 #define STOP_LEARNING_AT_VAL 0.999
 // Number of epoch above which the learning process stops
-#define STOP_LEARNING_AT_EPOCH 3000
+#define STOP_LEARNING_AT_EPOCH 50000
 // Save NeuraNet in compact format
 #define COMPACT true
 
@@ -51,21 +51,7 @@ const char* dataSetNames[NB_DATASET] = {
 
 const char* catNames[NB_OUTPUT] = {
   "Normal",
-  "Ischemic changes (Coronary Artery Disease)",
-  "Old Anterior Myocardial Infarction",
-  "Old Inferior Myocardial Infarction",
-  "Sinus tachycardy",
-  "Sinus bradycardy",
-  "Ventricular Premature Contraction (PVC)",
-  "Supraventricular Premature Contraction",
-  "Left bundle branch block",
-  "Right bundle branch block",
-  "1. degree AtrioVentricular block",
-  "2. degree AV block",
-  "3. degree AV block",
-  "Left ventricule hypertrophy",
-  "Atrial Fibrillation or Flutter",
-  "Others"
+  "Abnormal"
 };
 
 
@@ -129,6 +115,8 @@ bool DataSetLoad(DataSet* const that, const DataSetCat cat) {
         fclose(f);
         return false;
       }
+      if (that->_samples[iSample]._cat != 1)
+        that->_samples[iSample]._cat = 2;
     }
   } else if (cat == datatest) {
     char buffer[1000];
@@ -159,6 +147,8 @@ bool DataSetLoad(DataSet* const that, const DataSetCat cat) {
         fclose(f);
         return false;
       }
+      if (that->_samples[iSample]._cat != 1)
+        that->_samples[iSample]._cat = 2;
     }
   } else if (cat == dataall) {
     that->_nbSample = 452;
@@ -180,6 +170,8 @@ bool DataSetLoad(DataSet* const that, const DataSetCat cat) {
         fclose(f);
         return false;
       }
+      if (that->_samples[iSample]._cat != 1)
+        that->_samples[iSample]._cat = 2;
     }
   } else {
     printf("Invalid dataset\n");
@@ -238,7 +230,7 @@ float Evaluate(const NeuraNet* const that,
       float perc = 0.0;
       if (dataset->_cat != datalearn) {
         perc = (float)(countOk[iCat]) / (float)(countCat[iCat]);
-        printf("%43s (%3d): %f\n", catNames[iCat], countCat[iCat], perc);
+        printf("%8s (%3d): %f\n", catNames[iCat], countCat[iCat], perc);
         val += countOk[iCat];
       } else {
         perc = (float)(countOk[iCat] - countNg[iCat]) / 
