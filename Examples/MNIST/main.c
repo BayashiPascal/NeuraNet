@@ -21,8 +21,8 @@
 #define NB_INPUT MNIST_IMGSIZE * MNIST_IMGSIZE
 #define NB_OUTPUT 10
 // Nb max of hidden values, links and base functions
-#define NB_MAXHIDDEN 100
-#define NB_MAXLINK 300
+#define NB_MAXHIDDEN 1
+#define NB_MAXLINK 500
 #define NB_MAXBASE NB_MAXLINK
 // Size of the gene pool and elite pool
 #define ADN_SIZE_POOL 100
@@ -33,11 +33,9 @@
 // Value of the NeuraNet above which the learning process stops
 #define STOP_LEARNING_AT_VAL 0.999
 // Number of epoch above which the learning process stops
-#define STOP_LEARNING_AT_EPOCH 100000
+#define STOP_LEARNING_AT_EPOCH 20000
 // Save NeuraNet in compact format
 #define COMPACT true
-// Use convolution if true
-#define CONVOLUTION false
 
 // Categories of data sets
 
@@ -268,20 +266,17 @@ float Evaluate(const NeuraNet* const that,
   int countOk[NB_OUTPUT] = {0};
   int countNg[NB_OUTPUT] = {0};
   for (unsigned int iMNISTImg = dataset->_nbMNISTImg; iMNISTImg--;) {
-    // batching
-    if (dataset->_cat != datalearn || rnd() < 0.1) {
-      for (int iInp = 0; iInp < NNGetNbInput(that); ++iInp) {
-        VecSet(input, iInp,
-          dataset->_samples[iMNISTImg]._pixels[iInp]);
-      }
-      NNEval(that, input, output);
-      int pred = VecGetIMaxVal(output);
-      ++(countCat[dataset->_samples[iMNISTImg]._cat]);
-      if (pred == dataset->_samples[iMNISTImg]._cat) {
-        ++(countOk[dataset->_samples[iMNISTImg]._cat]);
-      } else if (dataset->_cat == datalearn) {
-        ++(countNg[dataset->_samples[iMNISTImg]._cat]);
-      }
+    for (int iInp = 0; iInp < NNGetNbInput(that); ++iInp) {
+      VecSet(input, iInp,
+        dataset->_samples[iMNISTImg]._pixels[iInp]);
+    }
+    NNEval(that, input, output);
+    int pred = VecGetIMaxVal(output);
+    ++(countCat[dataset->_samples[iMNISTImg]._cat]);
+    if (pred == dataset->_samples[iMNISTImg]._cat) {
+      ++(countOk[dataset->_samples[iMNISTImg]._cat]);
+    } else if (dataset->_cat == datalearn) {
+      ++(countNg[dataset->_samples[iMNISTImg]._cat]);
     }
   }
   int nbCat = 0;
@@ -315,28 +310,6 @@ float Evaluate(const NeuraNet* const that,
 
 // Create the NeuraNet
 NeuraNet* createNN(void) {
-#if CONVOLUTION
-  // Create the NeuraNet
-  int nbOut = NB_OUTPUT;
-  int thickConv = 5;
-  int depthConv = 2;
-  VecShort* dimIn = VecShortCreate(2);
-  VecSet(dimIn, 0, MNIST_IMGSIZE);
-  VecSet(dimIn, 1, MNIST_IMGSIZE);
-  VecShort* dimCell = VecShortCreate(2);
-  VecSet(dimCell, 0, 5);
-  VecSet(dimCell, 1, 5);
-  printf("Creating convoluted NeuraNet...\n");
-  fflush(stdout);
-  NeuraNet* nn = NeuraNetCreateConvolution(dimIn, nbOut, dimCell, 
-    depthConv, thickConv);
-  printf("Created convoluted NeuraNet\n");
-  printf("%ld links, %ld bases\n", NNGetNbMaxLinks(nn), 
-    NNGetNbMaxBases(nn));
-  fflush(stdout);
-  // Return the NeuraNet
-  return nn;
-#else
   // Create the NeuraNet
   int nbIn = NB_INPUT;
   int nbOut = NB_OUTPUT;
@@ -347,10 +320,9 @@ NeuraNet* createNN(void) {
     NeuraNetCreate(nbIn, nbOut, nbMaxHid, nbMaxBase, nbMaxLink);
   // Return the NeuraNet
   return nn;
-#endif
 }
 
-// Learn based on the SataSetCat 'cat'
+// Learn based on the DataSetCat 'cat'
 void Learn(DataSetCat cat) {
   // Init the random generator
   srandom(time(NULL));
@@ -386,10 +358,8 @@ void Learn(DataSetCat cat) {
       printf("Previous GenAlg reloaded.\n");
       if (GABestAdnF(ga) != NULL)
         NNSetBases(nn, GABestAdnF(ga));
-#if CONVOLUTION == false
       if (GABestAdnI(ga) != NULL)
         NNSetLinks(nn, GABestAdnI(ga));
-#endif
       bestVal = Evaluate(nn, dataset);
       printf("Starting with best at %f.\n", bestVal);
       limitEpoch += GAGetCurEpoch(ga);
@@ -398,24 +368,13 @@ void Learn(DataSetCat cat) {
   } else {
     printf("Creating new GenAlg...\n");
     fflush(stdout);
-#if CONVOLUTION
-    ga = GenAlgCreate(ADN_SIZE_POOL, ADN_SIZE_ELITE, 
-      NNGetGAAdnFloatLength(nn), 0);
-    NNSetGABoundsBases(nn, ga);
-#else
     ga = GenAlgCreate(ADN_SIZE_POOL, ADN_SIZE_ELITE, 
       NNGetGAAdnFloatLength(nn), NNGetGAAdnIntLength(nn));
     NNSetGABoundsBases(nn, ga);
     NNSetGABoundsLinks(nn, ga);
-#endif
     // Must be declared as a GenAlg applied to a NeuraNet with 
     // convolution
-#if CONVOLUTION
-    GASetTypeNeuraNetConv(ga, NB_INPUT, NNGetNbMaxHidden(nn), NB_OUTPUT,
-      NNGetNbBasesConv(nn), NNGetNbBasesCellConv(nn));
-#else
     GASetTypeNeuraNet(ga, NB_INPUT, NB_MAXHIDDEN, NB_OUTPUT);
-#endif
     GAInit(ga);
   }
   // If there is a NeuraNet available, reload it into the GenAlg
@@ -432,8 +391,10 @@ void Learn(DataSetCat cat) {
       bestVal = Evaluate(nn, dataset);
       printf("Starting with best at %f.\n", bestVal);
       GenAlgAdn* adn = GAAdn(ga, 0);
-      VecCopy(adn->_adnF, nn->_bases);
-      VecCopy(adn->_adnI, nn->_links);
+      if (adn->_adnF)
+        VecCopy(adn->_adnF, nn->_bases);
+      if (adn->_adnI)
+        VecCopy(adn->_adnI, nn->_links);
     }
     fclose(fd);
   }
@@ -464,10 +425,8 @@ void Learn(DataSetCat cat) {
       // to this adn
       if (GABestAdnF(ga) != NULL)
         NNSetBases(nn, GAAdnAdnF(adn));
-#if CONVOLUTION == false
       if (GABestAdnI(ga) != NULL)
         NNSetLinks(nn, GAAdnAdnI(adn));
-#endif
       // Evaluate the NeuraNet
       float value = Evaluate(nn, dataset);
       // Update the value of this adn
@@ -503,10 +462,8 @@ void Learn(DataSetCat cat) {
       GenAlgAdn* bestAdn = GAAdn(ga, curBestI);
       if (GAAdnAdnF(bestAdn) != NULL)
         NNSetBases(nn, GAAdnAdnF(bestAdn));
-#if CONVOLUTION == false
       if (GAAdnAdnI(bestAdn) != NULL)
         NNSetLinks(nn, GAAdnAdnI(bestAdn));
-#endif
       // Save the best NeuraNet
       fd = fopen("./bestnn.txt", "w");
       if (!NNSave(nn, fd, COMPACT)) {
@@ -559,7 +516,7 @@ void Learn(DataSetCat cat) {
   int sec = (int)floor(elapsed);
   printf("\nLearning complete (in %d:%d:%d:%ds)\n", 
     day, hour, min, sec);
-  fflush(stdout);  
+  fflush(stdout);
   // Free memory
   NeuraNetFree(&nn);
   GenAlgFree(&ga);
