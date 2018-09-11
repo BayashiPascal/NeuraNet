@@ -1037,3 +1037,126 @@ void NNPrune(const NeuraNet* const that) {
   }
 }
 
+// Helper functions to propagate recursively the accuracy in the nework
+void NNPropagateAccuracyLink(const NeuraNet* that, const long out, 
+  float accuracy, VecFloat* mutability) {
+  // Loop on links
+  for (int iLink = NNGetNbMaxLinks(that); iLink--;) {
+    // If this link is active and its output is the current output
+    if (VecGet(that->_links, iLink * NN_NBPARAMLINK) != -1 &&
+      VecGet(that->_links, iLink * NN_NBPARAMLINK + 2) == out) {
+      // Update the mutability
+      for (int iParam = NN_NBPARAMLINK; iParam--;)
+        VecSetAdd(mutability, iLink * NN_NBPARAMLINK + iParam, 
+          (1.0 - accuracy) * (1.0 - 
+          VecGet(mutability, iLink * NN_NBPARAMLINK + iParam)));
+      // Keep on propagating from the input of this link
+      NNPropagateAccuracyLink(that, 
+        VecGet(that->_links, iLink * NN_NBPARAMLINK + 1), out, mutability);
+    }
+  }
+}
+void NNPropagateAccuracyBase(const NeuraNet* that, const long out, 
+  float accuracy, VecFloat* mutability) {
+  // Loop on links
+  for (int iLink = NNGetNbMaxLinks(that); iLink--;) {
+    // If this link is active and its output is the current output
+    if (VecGet(that->_links, iLink * NN_NBPARAMLINK) != -1 &&
+      VecGet(that->_links, iLink * NN_NBPARAMLINK + 2) == out) {
+      // Update the mutability
+      long iBase = VecGet(that->_links, iLink * NN_NBPARAMLINK);
+      for (int iParam = NN_NBPARAMBASE; iParam--;)
+        VecSetAdd(mutability, iBase * NN_NBPARAMBASE + iParam, 
+          (1.0 - accuracy) * (1.0 - 
+          VecGet(mutability, iLink * NN_NBPARAMBASE + iParam)));
+      // Keep on propagating from the input of this link
+      NNPropagateAccuracyBase(that, 
+        VecGet(that->_links, iLink * NN_NBPARAMLINK + 1), out, mutability);
+    }
+  }
+}
+
+// Get the mutability vector for bases of the NeuraNet 'that' according 
+// to output's 'accuracy'
+// accuracy is a VecFloat of dimension nbOutput, where accuracy[iOut] 
+// equals 1.0 if the NeuraNet always returns the perfect answer for the 
+// output iOut, and 0.0 if never
+// Return a VecFloat of dimension nbBase * NB_PARAMBASE with values in 
+// [0.0, 1.0] 
+VecFloat* NNGetMutabilityBases(const NeuraNet* const that, 
+  const VecFloat* const accuracy) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    NeuraNetErr->_type = PBErrTypeNullPointer;
+    sprintf(NeuraNetErr->_msg, "'that' is null");
+    PBErrCatch(NeuraNetErr);
+  }
+  if (accuracy == NULL) {
+    NeuraNetErr->_type = PBErrTypeNullPointer;
+    sprintf(NeuraNetErr->_msg, "'accuracy' is null");
+    PBErrCatch(NeuraNetErr);
+  }
+  if (VecGetDim(accuracy) != NNGetNbOutput(that)) {
+    NeuraNetErr->_type = PBErrTypeInvalidArg;
+    sprintf(NeuraNetErr->_msg, "'accuracy''s dim is invalid (%ld==%d)",
+      VecGetDim(accuracy), NNGetNbOutput(that));
+    PBErrCatch(NeuraNetErr);
+  }
+#endif
+  // Create the mutability vector
+  VecFloat* ret = VecFloatCreate(NNGetNbMaxBases(that) * NN_NBPARAMBASE);
+  // Loop on output
+  for (int iOut = NNGetNbOutput(that); iOut--;) {
+    // Propagate the accuracy in the nework from the output
+    NNPropagateAccuracyBase(that, iOut, VecGet(accuracy, iOut), ret);
+  }
+  // Scale to have the highest mutability to one
+  float maxVal = VecGetMaxVal(ret);
+  if (maxVal > PBMATH_EPSILON)
+    VecScale(ret, 1.0 / maxVal);
+  // Return the mutability vector
+  return ret;
+}
+
+// Get the mutability vector for links of the NeuraNet 'that' according 
+// to output's 'accuracy'
+// accuracy is a VecFloat of dimension nbOutput, where accuracy[iOut] 
+// equals 1.0 if the NeuraNet always returns the perfect answer for the 
+// output iOut, and 0.0 if never
+// Return a VecFloat of dimension nbLink * NB_PARAMLINK with values in 
+// [0.0, 1.0] 
+VecFloat* NNGetMutabilityLinks(const NeuraNet* const that, 
+  const VecFloat* const accuracy) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    NeuraNetErr->_type = PBErrTypeNullPointer;
+    sprintf(NeuraNetErr->_msg, "'that' is null");
+    PBErrCatch(NeuraNetErr);
+  }
+  if (accuracy == NULL) {
+    NeuraNetErr->_type = PBErrTypeNullPointer;
+    sprintf(NeuraNetErr->_msg, "'accuracy' is null");
+    PBErrCatch(NeuraNetErr);
+  }
+  if (VecGetDim(accuracy) != NNGetNbOutput(that)) {
+    NeuraNetErr->_type = PBErrTypeInvalidArg;
+    sprintf(NeuraNetErr->_msg, "'accuracy''s dim is invalid (%ld==%d)",
+      VecGetDim(accuracy), NNGetNbOutput(that));
+    PBErrCatch(NeuraNetErr);
+  }
+#endif
+  // Create the mutability vector
+  VecFloat* ret = VecFloatCreate(NNGetNbMaxLinks(that) * NN_NBPARAMLINK);
+  // Loop on output
+  for (int iOut = NNGetNbOutput(that); iOut--;) {
+    // Propagate the accuracy in the nework from the output
+    NNPropagateAccuracyLink(that, iOut, VecGet(accuracy, iOut), ret);
+  }
+  // Scale to have the highest mutability to one
+  float maxVal = VecGetMaxVal(ret);
+  if (maxVal > PBMATH_EPSILON)
+    VecScale(ret, 1.0 / maxVal);
+  // Return the mutability vector
+  return ret;
+}
+

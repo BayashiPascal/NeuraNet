@@ -281,6 +281,26 @@ float NNGetHiddenValSimpsonDiv(const NeuraNet* const that);
 // no influence on outputs
 void NNPrune(const NeuraNet* const that);
 
+// Get the mutability vector for bases of the NeuraNet 'that' according 
+// to output's 'accuracy'
+// accuracy is a VecFloat of dimension nbOutput, where accuracy[iOut] 
+// equals 1.0 if the NeuraNet always returns the perfect answer for the 
+// output iOut, and 0.0 if never
+// Return a VecFloat of dimension nbBase * NB_PARAMBASE with values in 
+// [0.0, 1.0] 
+VecFloat* NNGetMutabilityBases(const NeuraNet* const that, 
+  const VecFloat* const accuracy);
+
+// Get the mutability vector for links of the NeuraNet 'that' according 
+// to output's 'accuracy'
+// accuracy is a VecFloat of dimension nbOutput, where accuracy[iOut] 
+// equals 1.0 if the NeuraNet always returns the perfect answer for the 
+// output iOut, and 0.0 if never
+// Return a VecFloat of dimension nbLink * NB_PARAMLINK with values in 
+// [0.0, 1.0] 
+VecFloat* NNGetMutabilityLinks(const NeuraNet* const that, 
+  const VecFloat* const accuracy);
+
 // ================= Interface with library GenAlg ==================
 // To use the following functions the user must include the header 
 // 'genalg.h' before the header 'neuranet.h'
