@@ -1,16 +1,16 @@
 \contentsline {section}{\numberline {1}Definitions}{3}
 \contentsline {section}{\numberline {2}Interface}{3}
-\contentsline {section}{\numberline {3}Code}{3}
-\contentsline {subsection}{\numberline {3.1}pbmath.c}{3}
-\contentsline {subsection}{\numberline {3.2}pbmath-inline.c}{3}
-\contentsline {section}{\numberline {4}Makefile}{3}
-\contentsline {section}{\numberline {5}Unit tests}{3}
-\contentsline {section}{\numberline {6}Unit tests output}{3}
-\contentsline {section}{\numberline {7}Validation}{4}
-\contentsline {subsection}{\numberline {7.1}Iris data set}{4}
-\contentsline {subsection}{\numberline {7.2}Abalone data set}{4}
-\contentsline {subsection}{\numberline {7.3}Arrhythmia data set}{4}
-\contentsline {subsection}{\numberline {7.4}Wisconsin Diagnostic Breast Cancer}{5}
-\contentsline {subsection}{\numberline {7.5}MNIST}{5}
-\contentsline {subsection}{\numberline {7.6}ORHD}{5}
-\contentsline {section}{\numberline {8}nn2cloud}{6}
+\contentsline {section}{\numberline {3}Code}{10}
+\contentsline {subsection}{\numberline {3.1}neuranet.c}{10}
+\contentsline {subsection}{\numberline {3.2}neuranet-inline.c}{29}
+\contentsline {section}{\numberline {4}Makefile}{33}
+\contentsline {section}{\numberline {5}Unit tests}{34}
+\contentsline {section}{\numberline {6}Unit tests output}{43}
+\contentsline {section}{\numberline {7}Validation}{45}
+\contentsline {subsection}{\numberline {7.1}Iris data set}{45}
+\contentsline {subsection}{\numberline {7.2}Abalone data set}{56}
+\contentsline {subsection}{\numberline {7.3}Arrhythmia data set}{71}
+\contentsline {subsection}{\numberline {7.4}Wisconsin Diagnostic Breast Cancer}{83}
+\contentsline {subsection}{\numberline {7.5}MNIST}{95}
+\contentsline {subsection}{\numberline {7.6}ORHD}{121}
+\contentsline {section}{\numberline {8}nn2cloud}{141}
