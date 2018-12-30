@@ -17,3 +17,18 @@ NeuraNet has been validated on
 * the Wisconsin Diagnostic Breast Cancer data set: classification, 30 inputs, 2 outputs, 400 learning samples, 169 validation samples, https://archive.ics.uci.edu/ml/datasets/Breast+Cancer+Wisconsin+%28Diagnostic%29 , 98.2% correct classification in 01:42s
 * the MNIST data set: classification, 784 inputs, 9 outputs, 50000 learning samples, 10000 validation samples,  http://yann.lecun.com/exdb/mnist/ , 81.1% correct classification on validation data after learning during 01:01:30:11s
 * the ORHD data set: classification, 64 inputs, 9 outputs, 3823 learning samples, 1797 validation samples, https://archive.ics.uci.edu/ml/datasets/Optical+Recognition+of+Handwritten+Digits , 88.2% correct classification on validation data after learning during 12:05:51s
+
+## How to install this repository
+1) Create a directory which will contains this repository and all the repositories it is depending on. Lets call it "Repos"
+2) Download the master branch of this repository into "Repos". Unzip it if necessary.
+3) The folder's name for the repository should be followed by "-master", rename the folder by removing "-master".
+4) cd to the repository's folder
+5) If wget is not installed: ```sudo apt-get update && sudo apt-get install wget``` on Ubuntu 16.04, or ```brew install wget``` on Mac OSx
+6) If gawk is not installed: ```sudo apt-get update && sudo apt-get install gawk```  on Ubuntu 16.04, ```brew install gawk``` on Mac OSx
+7) If this repository is the first one you are installing in "Repos", run the command ```make -k pbmake_wget```
+8) Run the command ```make``` to compile the repository. 
+9) Eventually, run the command ```main``` to run the unit tests and check everything is ok.
+10) Refer to the documentation to learn how to use this repository.
+
+The dependancies to other repositories should be resolved automatically and needed repositories should be installed in the "Repos" folder. However this process is not completely functional and some repositories may need to be installed manually. In this case, you will see a message from the compiler saying it cannot find some headers. Then install the missing repository with the following command, e.g. if "pbmath.h" is missing: ```make pbmath_wget```. The repositories should compile fine on Ubuntu 16.04. On Mac OSx, there is currently a problem with the linker.
+If you need assistance feel free to contact me with my gmail address: at bayashipascal.
