@@ -12,5 +12,5 @@
 \contentsline {subsection}{\numberline {7.3}Arrhythmia data set}{71}
 \contentsline {subsection}{\numberline {7.4}Wisconsin Diagnostic Breast Cancer}{83}
 \contentsline {subsection}{\numberline {7.5}MNIST}{95}
-\contentsline {subsection}{\numberline {7.6}ORHD}{121}
+\contentsline {subsection}{\numberline {7.6}ORHD}{120}
 \contentsline {section}{\numberline {8}nn2cloud}{141}

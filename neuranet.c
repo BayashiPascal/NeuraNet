@@ -812,9 +812,7 @@ void NNSetLinks(NeuraNet* const that, VecLong* const links) {
       // If the input is greater than the output
       if (in > out) {
         // Swap the input and output
-        long tmp = in;
-        in = out;
-        out = tmp;
+        swap(in, out);
       }
       // Add the link to the set, sorting on input and ouput
       float sortVal = (float)(in * maxId + out);

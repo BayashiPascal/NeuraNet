@@ -11,6 +11,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include "pberr.h"
+#include "pbcextension.h"
 #include "pbmath.h"
 #include "gset.h"
 
