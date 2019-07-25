@@ -629,31 +629,31 @@ bool NNDecodeAsJSON(NeuraNet** that, const JSONNode* const json) {
   if (prop == NULL) {
     return false;
   }
-  int nbInputVal = atoi(JSONLabel(JSONValue(prop, 0)));
+  int nbInputVal = atoi(JSONLblVal(prop));
   // Decode the nbOutputVal
   prop = JSONProperty(json, "_nbOutputVal");
   if (prop == NULL) {
     return false;
   }
-  int nbOutputVal = atoi(JSONLabel(JSONValue(prop, 0)));
+  int nbOutputVal = atoi(JSONLblVal(prop));
   // Decode the nbMaxHidVal
   prop = JSONProperty(json, "_nbMaxHidVal");
   if (prop == NULL) {
     return false;
   }
-  long nbMaxHidVal = atol(JSONLabel(JSONValue(prop, 0)));
+  long nbMaxHidVal = atol(JSONLblVal(prop));
   // Decode the nbMaxBases
   prop = JSONProperty(json, "_nbMaxBases");
   if (prop == NULL) {
     return false;
   }
-  long nbMaxBases = atol(JSONLabel(JSONValue(prop, 0)));
+  long nbMaxBases = atol(JSONLblVal(prop));
   // Decode the nbMaxLinks
   prop = JSONProperty(json, "_nbMaxLinks");
   if (prop == NULL) {
     return false;
   }
-  long nbMaxLinks = atol(JSONLabel(JSONValue(prop, 0)));
+  long nbMaxLinks = atol(JSONLblVal(prop));
   // Allocate memory
   *that = NeuraNetCreate(nbInputVal, nbOutputVal, nbMaxHidVal, 
     nbMaxBases, nbMaxLinks);
