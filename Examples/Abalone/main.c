@@ -284,14 +284,14 @@ float Evaluate(const NeuraNet* const that,
 
   }
   val /= (float)(dataset->_nbSample);
-  if (dataset->_cat != datalearn) {
+  /*if (dataset->_cat != datalearn) {
     float perc = 0.0;
     printf("age_err count cumul_perc\n");
     for (int iErr = 0; iErr < 29; ++ iErr) {
       perc += (float)(count[iErr]) / (float)(dataset->_nbSample);
       printf("%2d %4d %f\n", iErr, count[iErr], perc);
     }
-  }
+  }*/
 
   // Free memory
   VecFree(&input);
