@@ -1,4 +1,4 @@
-// ============ NEURANET-INLINE.C ================
+// ============ NEURANET-static inline.C ================
 
 // ----- NeuraNetBaseFun
 
@@ -10,7 +10,7 @@
 // NNBaseFun(param,x)=
 // tan(param[0]*NN_THETA)*(x+param[1])+param[2]
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 float NNBaseFun(const float* const param, const float x) {
 #if BUILDMODE == 0
@@ -29,7 +29,7 @@ float NNBaseFun(const float* const param, const float x) {
 
 // Get the nb of input values of the NeuraNet 'that'
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 int NNGetNbInput(const NeuraNet* const that) {
 #if BUILDMODE == 0
@@ -44,7 +44,7 @@ int NNGetNbInput(const NeuraNet* const that) {
 
 // Get the nb of output values of the NeuraNet 'that'
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 int NNGetNbOutput(const NeuraNet* const that) {
 #if BUILDMODE == 0
@@ -59,7 +59,7 @@ int NNGetNbOutput(const NeuraNet* const that) {
 
 // Get the nb max of hidden values of the NeuraNet 'that'
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 long NNGetNbMaxHidden(const NeuraNet* const that) {
 #if BUILDMODE == 0
@@ -74,7 +74,7 @@ long NNGetNbMaxHidden(const NeuraNet* const that) {
 
 // Get the nb max of base functions of the NeuraNet 'that'
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 long NNGetNbMaxBases(const NeuraNet* const that) {
 #if BUILDMODE == 0
@@ -89,7 +89,7 @@ long NNGetNbMaxBases(const NeuraNet* const that) {
 
 // Get the nb of base functions for convolution of the NeuraNet 'that'
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 long NNGetNbBasesConv(const NeuraNet* const that) {
 #if BUILDMODE == 0
@@ -105,7 +105,7 @@ long NNGetNbBasesConv(const NeuraNet* const that) {
 // Get the nb of base functions per cell for convolution of 
 // the NeuraNet 'that'
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 long NNGetNbBasesCellConv(const NeuraNet* const that) {
 #if BUILDMODE == 0
@@ -120,7 +120,7 @@ long NNGetNbBasesCellConv(const NeuraNet* const that) {
 
 // Get the nb max of links of the NeuraNet 'that'
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 long NNGetNbMaxLinks(const NeuraNet* const that) {
 #if BUILDMODE == 0
@@ -135,7 +135,7 @@ long NNGetNbMaxLinks(const NeuraNet* const that) {
 
 // Get the parameters of the base functions of the NeuraNet 'that'
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 const VecFloat* NNBases(const NeuraNet* const that) {
 #if BUILDMODE == 0
@@ -150,7 +150,7 @@ const VecFloat* NNBases(const NeuraNet* const that) {
 
 // Get the links description of the NeuraNet 'that'
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 const VecLong* NNLinks(const NeuraNet* const that) {
 #if BUILDMODE == 0
@@ -165,7 +165,7 @@ const VecLong* NNLinks(const NeuraNet* const that) {
 
 // Get the hidden values of the NeuraNet 'that'
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 const VecFloat* NNHiddenValues(const NeuraNet* const that) {
 #if BUILDMODE == 0
@@ -180,7 +180,7 @@ const VecFloat* NNHiddenValues(const NeuraNet* const that) {
 
 // Get the 'iVal'-th hidden value of the NeuraNet 'that'
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 float NNGetHiddenValue(const NeuraNet* const that, const long iVal) {
 #if BUILDMODE == 0
@@ -205,7 +205,7 @@ float NNGetHiddenValue(const NeuraNet* const that, const long iVal) {
 //  each base is defined as param[3] in [-1,1]
 // tan(param[0]*NN_THETA)*(x+param[1])+param[2] 
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 void NNSetBases(NeuraNet* const that, const VecFloat* const bases) {
 #if BUILDMODE == 0
@@ -232,7 +232,7 @@ void NNSetBases(NeuraNet* const that, const VecFloat* const bases) {
 // Set the 'iBase'-th parameter of the base functions of the NeuraNet 
 // 'that' to 'base'
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 void NNBasesSet(NeuraNet* const that, const long iBase, 
   const float base) {
@@ -255,7 +255,7 @@ void NNBasesSet(NeuraNet* const that, const long iBase,
 
 // Get the number of active links in the NeuraNet 'that'
 #if BUILDMODE != 0
-inline
+static inline
 #endif
 long NNGetNbActiveLinks(const NeuraNet* const that) {
 #if BUILDMODE == 0
