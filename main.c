@@ -490,7 +490,7 @@ void UnitTestNeuraNetGA() {
       printf("%lu %f\n", GAGetCurEpoch(ga), best);
       fflush(stdout);
     }
-  } while (GAGetCurEpoch(ga) < 30000 && fabs(ev) > 0.001);
+  } while (GAGetCurEpoch(ga) < 10000 && fabs(ev) > 0.001);
   //} while (GAGetCurEpoch(ga) < 10 && fabs(ev) > 0.001);
   printf("best after %lu epochs: %f \n", GAGetCurEpoch(ga), best);
   NNPrintln(nn, stdout);
