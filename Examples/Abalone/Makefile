@@ -23,3 +23,15 @@ main.o: \
 		$(neuranet_EXE_DEP)
 	$(COMPILER) $(BUILD_ARG) $(neuranet_BUILD_ARG) `echo "$(neuranet_INC_DIR)" | tr ' ' '\n' | sort -u` -c main.c
 	
+cleanLearn:
+	rm bestnn.txt learn.txt
+
+learn:
+	main -learn datalearn | tee learn.txt
+
+evaluate:
+	main -check datatest
+
+predict:
+	main -predict 1.0 -1.0 -1.0 0.455 0.365 0.095 0.514 0.2245 0.101 0.15 && echo "Should return 15"
+

@@ -9,8 +9,8 @@
 \contentsline {section}{\numberline {7}Validation}{45}
 \contentsline {subsection}{\numberline {7.1}Iris data set}{45}
 \contentsline {subsection}{\numberline {7.2}Abalone data set}{56}
-\contentsline {subsection}{\numberline {7.3}Arrhythmia data set}{71}
-\contentsline {subsection}{\numberline {7.4}Wisconsin Diagnostic Breast Cancer}{83}
-\contentsline {subsection}{\numberline {7.5}MNIST}{95}
-\contentsline {subsection}{\numberline {7.6}ORHD}{120}
-\contentsline {section}{\numberline {8}nn2cloud}{141}
+\contentsline {subsection}{\numberline {7.3}Arrhythmia data set}{78}
+\contentsline {subsection}{\numberline {7.4}Wisconsin Diagnostic Breast Cancer}{91}
+\contentsline {subsection}{\numberline {7.5}MNIST}{102}
+\contentsline {subsection}{\numberline {7.6}ORHD}{128}
+\contentsline {section}{\numberline {8}nn2cloud}{148}

@@ -20,12 +20,14 @@
 #define NB_INPUT 10
 #define NB_OUTPUT 1
 // Nb max of hidden values, links and base functions
-#define NB_MAXHIDDEN 1
-#define NB_MAXLINK 100
+#define NB_MAXHIDDEN (NB_INPUT * 2)
+#define NB_MAXLINK (NB_MAXHIDDEN * 10)
 #define NB_MAXBASE NB_MAXLINK
 // Size of the gene pool and elite pool
-#define ADN_SIZE_POOL 500
+#define ADN_SIZE_POOL 100
 #define ADN_SIZE_ELITE 20
+// Diversity threshold for KT event in GenAlg
+#define DIVERSITY_THRESHOLD 0.00001
 // Initial best value during learning, must be lower than any
 // possible value returned by Evaluate()
 #define INIT_BEST_VAL -10000.0
@@ -63,7 +65,6 @@ typedef struct DataSet {
   int _nbSample;
   // Samples
   Abalone* _samples;
-  float _weights[29];
 } DataSet;
 
 // Get the DataSetCat from its 'name'
@@ -224,22 +225,6 @@ bool DataSetLoad(DataSet* const that, const DataSetCat cat) {
   }
   fclose(f);
 
-  for (int iCat = 29; iCat--;)
-    that->_weights[iCat] = 0.0;
-  for (int iSample = that->_nbSample; iSample--;) {
-    int cat = (int)round(that->_samples[iSample]._age) - 1;
-    if (cat < 0 || cat >= 29) {
-      printf("Invalid age #%d %f\n", iSample, 
-        that->_samples[iSample]._age);
-      return false;
-    }
-    that->_weights[cat] += 1.0;
-  }
-  for (int iCat = 29; iCat--;)
-    that->_weights[iCat] = 
-      ((float)(that->_nbSample) - that->_weights[iCat]) / 
-      (float)(that->_nbSample);
-
   // Return success code
   return true;
 } 
@@ -256,7 +241,8 @@ void DataSetFree(DataSet** that) {
 // Evalutation function for the NeuraNet 'that' on the DataSet 'dataset'
 // Return the value of the NeuraNet, the bigger the better
 float Evaluate(const NeuraNet* const that, 
-  const DataSet* const dataset) {
+  const DataSet* const dataset,
+  float thresholdVal) {
   // Declare 2 vectors to memorize the input and output values
   VecFloat* input = VecFloatCreate(NNGetNbInput(that));
   VecFloat* output = VecFloatCreate(NNGetNbOutput(that));
@@ -265,7 +251,6 @@ float Evaluate(const NeuraNet* const that,
   
   // Evaluate
   
-  int count[29] = {0};
   for (int iSample = dataset->_nbSample; iSample--;) {
     for (int iInp = 0; iInp < NNGetNbInput(that); ++iInp) {
       VecSet(input, iInp,
@@ -277,21 +262,16 @@ float Evaluate(const NeuraNet* const that,
     float age = dataset->_samples[iSample]._age + 0.5;
     float v = fabs(pred - age);
     val -= v;
-    if (dataset->_cat != datalearn) {
-      int iErr = (int)round(v);
-      ++(count[iErr]);
+    if (dataset->_cat == datalearn) {
+      float predVal = val / (float)(dataset->_nbSample);
+      if (predVal < thresholdVal) {
+        val = val / (float)iSample * (float)(dataset->_nbSample);
+        iSample = 0;
+      }
     }
 
   }
   val /= (float)(dataset->_nbSample);
-  /*if (dataset->_cat != datalearn) {
-    float perc = 0.0;
-    printf("age_err count cumul_perc\n");
-    for (int iErr = 0; iErr < 29; ++ iErr) {
-      perc += (float)(count[iErr]) / (float)(dataset->_nbSample);
-      printf("%2d %4d %f\n", iErr, count[iErr], perc);
-    }
-  }*/
 
   // Free memory
   VecFree(&input);
@@ -301,7 +281,7 @@ float Evaluate(const NeuraNet* const that,
 }
 
 // Create the NeuraNet
-NeuraNet* createNN(void) {
+NeuraNet* CreateNN(void) {
   // Create the NeuraNet
   int nbIn = NB_INPUT;
   int nbOut = NB_OUTPUT;
@@ -331,7 +311,7 @@ void Learn(DataSetCat cat) {
     return;
   }
   // Create the NeuraNet
-  NeuraNet* nn = createNN();
+  NeuraNet* nn = CreateNN();
   // Declare a variable to memorize the best value
   float bestVal = INIT_BEST_VAL;
   // Declare a variable to memorize the limit in term of epoch
@@ -353,7 +333,7 @@ void Learn(DataSetCat cat) {
         NNSetBases(nn, GABestAdnF(ga));
       if (GABestAdnI(ga) != NULL)
         NNSetLinks(nn, GABestAdnI(ga));
-      bestVal = Evaluate(nn, dataset);
+      bestVal = Evaluate(nn, dataset, INIT_BEST_VAL);
       printf("Starting with best at %f.\n", bestVal);
       limitEpoch += GAGetCurEpoch(ga);
     }
@@ -365,11 +345,15 @@ void Learn(DataSetCat cat) {
       NNGetGAAdnFloatLength(nn), NNGetGAAdnIntLength(nn));
     NNSetGABoundsBases(nn, ga);
     NNSetGABoundsLinks(nn, ga);
-    // Must be declared as a GenAlg applied to a NeuraNet with 
-    // convolution
+    // Must be declared as a GenAlg applied to a NeuraNet
     GASetTypeNeuraNet(ga, NB_INPUT, NB_MAXHIDDEN, NB_OUTPUT);
     GAInit(ga);
   }
+  // Set the diveristy
+  GASetDiversityThreshold(ga, DIVERSITY_THRESHOLD);
+  
+  GASetTextOMeterFlag(ga, true);
+  
   // If there is a NeuraNet available, reload it into the GenAlg
   fd = fopen("./bestnn.txt", "r");
   if (fd) {
@@ -381,7 +365,7 @@ void Learn(DataSetCat cat) {
       return;
     } else {
       printf("Previous NeuraNet reloaded.\n");
-      bestVal = Evaluate(nn, dataset);
+      bestVal = Evaluate(nn, dataset, INIT_BEST_VAL);
       printf("Starting with best at %f.\n", bestVal);
       GenAlgAdn* adn = GAAdn(ga, 0);
       if (adn->_adnF)
@@ -400,6 +384,7 @@ void Learn(DataSetCat cat) {
   // Declare a variable to memorize the best value in the current epoch
   float curBest = 0.0;
   float curWorst = 0.0;
+  float curWorstElite = 0.0;
   // Declare a variable to manage the save of GenAlg
   int delaySave = 0;
   // Learning loop
@@ -407,11 +392,13 @@ void Learn(DataSetCat cat) {
     GAGetCurEpoch(ga) < limitEpoch) {
     curWorst = curBest;
     curBest = INIT_BEST_VAL;
+    curWorstElite = INIT_BEST_VAL;
     int curBestI = 0;
-    unsigned long int ageBest = 0;
     // For each adn in the GenAlg
-    //for (int iEnt = GAGetNbAdns(ga); iEnt--;) {
-    for (int iEnt = 0; iEnt < GAGetNbAdns(ga); ++iEnt) {
+    int startEnt = 0;
+    if (GAGetCurEpoch(ga) > 0)
+      startEnt = GAGetNbElites(ga);
+    for (int iEnt = startEnt; iEnt < GAGetNbAdns(ga); ++iEnt) {
       // Get the adn
       GenAlgAdn* adn = GAAdn(ga, iEnt);
       // Set the links and base functions of the NeuraNet according
@@ -421,18 +408,19 @@ void Learn(DataSetCat cat) {
       if (GABestAdnI(ga) != NULL)
         NNSetLinks(nn, GAAdnAdnI(adn));
       // Evaluate the NeuraNet
-      float value = Evaluate(nn, dataset);
+      float value = Evaluate(nn, dataset, curWorstElite);
       // Update the value of this adn
       GASetAdnValue(ga, adn, value);
       // Update the best value in the current epoch
       if (value > curBest) {
         curBest = value;
         curBestI = iEnt;
-        ageBest = GAAdnGetAge(adn);
       }
       if (value < curWorst)
         curWorst = value;
     }
+    // Memorize the current value of the worst elite
+    curWorstElite = GAAdnGetVal(GAAdn(ga, GAGetNbElites(ga) - 1));
     // Measure time
     clock_gettime(CLOCK_REALTIME, &stop);
     float elapsed = stop.tv_sec - start.tv_sec;
@@ -469,9 +457,9 @@ void Learn(DataSetCat cat) {
       fclose(fd);
     } else {
       fprintf(stderr, 
-        "Epoch %05lu: v%f a%03lu(%03d) kt%03lu ", 
-        GAGetCurEpoch(ga), curBest, ageBest, curBestI, 
-        GAGetNbKTEvent(ga));
+        "Epoch %05lu: v%f a%03lu kt%03lu ", 
+        GAGetCurEpoch(ga), GAAdnGetVal(GAAdn(ga, 0)), 
+        GAAdnGetAge(GAAdn(ga, 0)), GAGetNbKTEvent(ga));
       fprintf(stderr, "(in %02d:%02d:%02d:%02ds)  \r", 
         day, hour, min, sec);
       fflush(stderr);
@@ -526,7 +514,7 @@ void Validate(const NeuraNet* const that, const DataSetCat cat) {
     return;
   }
   // Evaluate the NeuraNet
-  float value = Evaluate(that, dataset);
+  float value = Evaluate(that, dataset, INIT_BEST_VAL);
   // Display the result
   printf("Value: %.6f\n", value);
   // Free memory
@@ -539,7 +527,7 @@ void Predict(const NeuraNet* const that, const int nbInp,
   char** const inputs) {
   // Check the number of inputs
   if (nbInp != NNGetNbInput(that)) {
-    printf("Wrong number of inputs, there should %d, there was %d\n",
+    printf("Wrong number of inputs, there should be %d, there was %d\n",
       NNGetNbInput(that), nbInp);
     return;
   }
