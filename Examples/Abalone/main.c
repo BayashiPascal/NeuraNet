@@ -513,10 +513,58 @@ void Validate(const NeuraNet* const that, const DataSetCat cat) {
     printf("Couldn't load the data\n");
     return;
   }
-  // Evaluate the NeuraNet
-  float value = Evaluate(that, dataset, INIT_BEST_VAL);
+
+  // Declare an array to memorize the error in prediction per
+  // predicted number of layers
+  unsigned int errors[30];
+  for (int i = 0; i < 30; ++i)
+    errors[i] = 0;
+
+  // Declare 2 vectors to memorize the input and output values
+  VecFloat* input = VecFloatCreate(NNGetNbInput(that));
+  VecFloat* output = VecFloatCreate(NNGetNbOutput(that));
+  // Declare a variable to memorize the value
+  float val = 0.0;
+  
+  // Evaluate on the validation dataset
+  
+  for (int iSample = dataset->_nbSample; iSample--;) {
+    for (int iInp = 0; iInp < NNGetNbInput(that); ++iInp) {
+      VecSet(input, iInp,
+        dataset->_samples[iSample]._props[iInp]);
+    }
+    NNEval(that, input, output);
+    
+    float pred = VecGet(output, 0);
+    float age = dataset->_samples[iSample]._age + 0.5;
+    float v = fabs(pred - age);
+    int error = (int)v;
+    if (error >= 30) 
+      error = 29;
+    (errors[error])++;
+    val -= v;
+
+  }
+  val /= (float)(dataset->_nbSample);
+  
+  // Display the result per predicted nb of layer
+  float cumul = 0.0;
+  printf("age_err\tcount\tcumul_perc\n");
+  for (int i = 0; i < 30; ++i) {
+    float perc = (float)(errors[i]) / (float)(dataset->_nbSample);
+    cumul += perc;
+    printf("%u\t%u\t%f\n", i, errors[i], cumul);
+  }
+
+  // Free memory
+  VecFree(&input);
+  VecFree(&output);
+
+
   // Display the result
-  printf("Value: %.6f\n", value);
+  printf("Value: %.6f\n", val);
+
+
   // Free memory
   DataSetFree(&dataset);
 }
