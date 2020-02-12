@@ -37,6 +37,8 @@
 #define STOP_LEARNING_AT_EPOCH 1000
 // Save NeuraNet in compact format
 #define COMPACT true
+// Switch between mutable links and immutable links
+#define MUTABLE_LINK 0
 
 // Categories of data sets
 
@@ -282,6 +284,18 @@ float Evaluate(const NeuraNet* const that,
 
 // Create the NeuraNet
 NeuraNet* CreateNN(void) {
+#if MUTABLE_LINK == 0
+  // Create the NeuraNet
+  int nbIn = NB_INPUT;
+  int nbOut = NB_OUTPUT;
+  VecLong* layers = VecLongCreate(1);
+  VecSet(layers, 0, NB_INPUT);
+  NeuraNet* nn = 
+    NeuraNetCreateFullyConnected(nbIn, nbOut, layers);
+  VecFree(&layers);
+  // Return the NeuraNet
+  return nn;
+#else
   // Create the NeuraNet
   int nbIn = NB_INPUT;
   int nbOut = NB_OUTPUT;
@@ -293,6 +307,7 @@ NeuraNet* CreateNN(void) {
 
   // Return the NeuraNet
   return nn;
+#endif
 }
 
 // Learn based on the DataSetCat 'cat'
@@ -347,6 +362,7 @@ void Learn(DataSetCat cat) {
     NNSetGABoundsLinks(nn, ga);
     // Must be declared as a GenAlg applied to a NeuraNet
     GASetTypeNeuraNet(ga, NB_INPUT, NB_MAXHIDDEN, NB_OUTPUT);
+    GASetNeuraNetLinkMutability(ga, false);
     GAInit(ga);
   }
   // Set the diveristy
@@ -370,8 +386,10 @@ void Learn(DataSetCat cat) {
       GenAlgAdn* adn = GAAdn(ga, 0);
       if (adn->_adnF)
         VecCopy(adn->_adnF, nn->_bases);
+#if MUTABLE_LINK == 1
       if (adn->_adnI)
         VecCopy(adn->_adnI, nn->_links);
+#endif
     }
     fclose(fd);
   }
@@ -405,8 +423,10 @@ void Learn(DataSetCat cat) {
       // to this adn
       if (GABestAdnF(ga) != NULL)
         NNSetBases(nn, GAAdnAdnF(adn));
+#if MUTABLE_LINK == 1
       if (GABestAdnI(ga) != NULL)
         NNSetLinks(nn, GAAdnAdnI(adn));
+#endif
       // Evaluate the NeuraNet
       float value = Evaluate(nn, dataset, curWorstElite);
       // Update the value of this adn
@@ -443,8 +463,10 @@ void Learn(DataSetCat cat) {
       GenAlgAdn* bestAdn = GAAdn(ga, curBestI);
       if (GAAdnAdnF(bestAdn) != NULL)
         NNSetBases(nn, GAAdnAdnF(bestAdn));
+#if MUTABLE_LINK == 1
       if (GAAdnAdnI(bestAdn) != NULL)
         NNSetLinks(nn, GAAdnAdnI(bestAdn));
+#endif
       // Save the best NeuraNet
       fd = fopen("./bestnn.txt", "w");
       if (!NNSave(nn, fd, COMPACT)) {
