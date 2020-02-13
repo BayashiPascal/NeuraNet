@@ -10,6 +10,8 @@
 #include "neuranet.h"
 
 // http://www.cs.toronto.edu/~delve/data/abalone/desc.html
+// Results for comparison available in 
+// https://eprints.utas.edu.au/21965/1/whole_WaughSamuelGeorge1997_thesis.pdf
 
 // Nb of step between each save of the GenAlg
 // Saving it allows to restart a stop learning process but is 
@@ -34,11 +36,11 @@
 // Value of the NeuraNet above which the learning process stops
 #define STOP_LEARNING_AT_VAL -0.01
 // Number of epoch above which the learning process stops
-#define STOP_LEARNING_AT_EPOCH 1000
+#define STOP_LEARNING_AT_EPOCH 100000
 // Save NeuraNet in compact format
 #define COMPACT true
 // Switch between mutable links and immutable links
-#define MUTABLE_LINK 0
+#define MUTABLE_LINK 1
 
 // Categories of data sets
 
@@ -289,7 +291,8 @@ NeuraNet* CreateNN(void) {
   int nbIn = NB_INPUT;
   int nbOut = NB_OUTPUT;
   VecLong* layers = VecLongCreate(1);
-  VecSet(layers, 0, NB_INPUT);
+  VecSet(layers, 0, NB_INPUT * 2);
+  //VecSet(layers, 1, NB_INPUT);
   NeuraNet* nn = 
     NeuraNetCreateFullyConnected(nbIn, nbOut, layers);
   VecFree(&layers);
@@ -362,7 +365,11 @@ void Learn(DataSetCat cat) {
     NNSetGABoundsLinks(nn, ga);
     // Must be declared as a GenAlg applied to a NeuraNet
     GASetTypeNeuraNet(ga, NB_INPUT, NB_MAXHIDDEN, NB_OUTPUT);
+#if MUTABLE_LINK == 0
     GASetNeuraNetLinkMutability(ga, false);
+#else
+    GASetNeuraNetLinkMutability(ga, true);
+#endif
     GAInit(ga);
   }
   // Set the diveristy
@@ -414,7 +421,7 @@ void Learn(DataSetCat cat) {
     int curBestI = 0;
     // For each adn in the GenAlg
     int startEnt = 0;
-    if (GAGetCurEpoch(ga) > 0)
+    if (GAGetCurEpoch(ga) > 0 && GAGetFlagKTEvent(ga) == false)
       startEnt = GAGetNbElites(ga);
     for (int iEnt = startEnt; iEnt < GAGetNbAdns(ga); ++iEnt) {
       // Get the adn
@@ -538,9 +545,13 @@ void Validate(const NeuraNet* const that, const DataSetCat cat) {
 
   // Declare an array to memorize the error in prediction per
   // predicted number of layers
+  unsigned int confusion[30][30];
   unsigned int errors[30];
-  for (int i = 0; i < 30; ++i)
+  for (int i = 0; i < 30; ++i) {
     errors[i] = 0;
+    for (int j = 0; j < 30; ++j)
+      confusion[i][j] = 0;
+  }
 
   // Declare 2 vectors to memorize the input and output values
   VecFloat* input = VecFloatCreate(NNGetNbInput(that));
@@ -565,6 +576,8 @@ void Validate(const NeuraNet* const that, const DataSetCat cat) {
       error = 29;
     (errors[error])++;
     val -= v;
+    if (pred >= 0 && pred <= 29)
+      ++(confusion[(int)floor(dataset->_samples[iSample]._age + 0.5)][(int)floor(pred)]);
 
   }
   val /= (float)(dataset->_nbSample);
@@ -576,6 +589,14 @@ void Validate(const NeuraNet* const that, const DataSetCat cat) {
     float perc = (float)(errors[i]) / (float)(dataset->_nbSample);
     cumul += perc;
     printf("%u\t%u\t%f\n", i, errors[i], cumul);
+  }
+  for (int i = 0; i < 30; ++i) {
+    for (int j = 0; j < 30; ++j)
+    if (confusion[i][j] > 0)
+      printf("%03d ", confusion[i][j]);
+    else
+      printf("... ");
+    printf("\n");
   }
 
   // Free memory
