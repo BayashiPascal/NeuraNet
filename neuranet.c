@@ -1158,3 +1158,79 @@ VecFloat* NNGetMutabilityLinks(const NeuraNet* const that,
   return ret;
 }
 
+// ================= Interface with library GenAlg ==================
+
+// Set the bounds of the GenAlg 'ga' to be used for bases parameters of 
+// the NeuraNet 'that'
+void NNSetGABoundsBases(const NeuraNet* const that, GenAlg* const ga) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    NeuraNetErr->_type = PBErrTypeNullPointer;
+    sprintf(NeuraNetErr->_msg, "'that' is null");
+    PBErrCatch(NeuraNetErr);
+  }
+  if (ga == NULL) {
+    NeuraNetErr->_type = PBErrTypeNullPointer;
+    sprintf(NeuraNetErr->_msg, "'ga' is null");
+    PBErrCatch(NeuraNetErr);
+  }
+  if (GAGetLengthAdnFloat(ga) != NNGetGAAdnFloatLength(that)) {
+    NeuraNetErr->_type = PBErrTypeInvalidArg;
+    sprintf(NeuraNetErr->_msg, "'ga' 's float genes dimension doesn't\
+ matches 'that' 's max nb of bases (%ld==%ld)",
+      GAGetLengthAdnFloat(ga), NNGetGAAdnFloatLength(that));
+    PBErrCatch(NeuraNetErr);
+  }
+#endif
+  // Declare a vector to memorize the bounds
+  VecFloat2D bounds = VecFloatCreateStatic2D();
+  // Init the bounds
+  VecSet(&bounds, 0, -1.0); VecSet(&bounds, 1, 1.0);
+  // For each gene
+  for (long iGene = NNGetGAAdnFloatLength(that); iGene--;)
+    // Set the bounds
+    GASetBoundsAdnFloat(ga, iGene, &bounds);
+}
+
+// Set the bounds of the GenAlg 'ga' to be used for links description of 
+// the NeuraNet 'that'
+void NNSetGABoundsLinks(const NeuraNet* const that, GenAlg* const ga) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    NeuraNetErr->_type = PBErrTypeNullPointer;
+    sprintf(NeuraNetErr->_msg, "'that' is null");
+    PBErrCatch(NeuraNetErr);
+  }
+  if (ga == NULL) {
+    NeuraNetErr->_type = PBErrTypeNullPointer;
+    sprintf(NeuraNetErr->_msg, "'ga' is null");
+    PBErrCatch(NeuraNetErr);
+  }
+  if (GAGetLengthAdnInt(ga) != NNGetGAAdnIntLength(that)) {
+    NeuraNetErr->_type = PBErrTypeInvalidArg;
+    sprintf(NeuraNetErr->_msg, "'ga' 's int genes dimension doesn't\
+ matches 'that' 's max nb of links (%ld==%ld)",
+      GAGetLengthAdnInt(ga), NNGetGAAdnIntLength(that));
+    PBErrCatch(NeuraNetErr);
+  }
+#endif
+  // Declare a vector to memorize the bounds
+  VecLong2D bounds = VecLongCreateStatic2D();
+  // For each gene
+  for (long iGene = 0; iGene < NNGetGAAdnIntLength(that); 
+    iGene += NN_NBPARAMLINK) {
+    // Set the bounds for base id
+    VecSet(&bounds, 0, -1); 
+    VecSet(&bounds, 1, NNGetNbMaxBases(that) - 1);
+    GASetBoundsAdnInt(ga, iGene, &bounds);
+    // Set the bounds for input value
+    VecSet(&bounds, 0, 0); 
+    VecSet(&bounds, 1, NNGetNbInput(that) + NNGetNbMaxHidden(that) - 1);
+    GASetBoundsAdnInt(ga, iGene + 1, &bounds);
+    // Set the bounds for output value
+    VecSet(&bounds, 0, NNGetNbInput(that)); 
+    VecSet(&bounds, 1, NNGetNbInput(that) + NNGetNbMaxHidden(that) + 
+      NNGetNbOutput(that) - 1);
+    GASetBoundsAdnInt(ga, iGene + 2, &bounds);
+  }
+}

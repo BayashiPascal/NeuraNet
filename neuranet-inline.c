@@ -278,4 +278,37 @@ long NNGetNbActiveLinks(const NeuraNet* const that) {
   return nb;
 }
 
+// ================= Interface with library GenAlg ==================
+
+// Get the length of the adn of float values to be used in the GenAlg 
+// library for the NeuraNet 'that'
+#if BUILDMODE != 0
+static inline
+#endif
+long NNGetGAAdnFloatLength(const NeuraNet* const that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    NeuraNetErr->_type = PBErrTypeNullPointer;
+    sprintf(NeuraNetErr->_msg, "'that' is null");
+    PBErrCatch(NeuraNetErr);
+  }
+#endif
+  return NNGetNbMaxBases(that) * NN_NBPARAMBASE;
+}
+
+// Get the length of the adn of int values to be used in the GenAlg 
+// library for the NeuraNet 'that'
+#if BUILDMODE != 0
+static inline
+#endif
+long NNGetGAAdnIntLength(const NeuraNet* const that) {
+#if BUILDMODE == 0
+  if (that == NULL) {
+    NeuraNetErr->_type = PBErrTypeNullPointer;
+    sprintf(NeuraNetErr->_msg, "'that' is null");
+    PBErrCatch(NeuraNetErr);
+  }
+#endif
+  return NNGetNbMaxLinks(that) * NN_NBPARAMLINK;
+}
 
