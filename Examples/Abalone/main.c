@@ -8,6 +8,9 @@
 #include "pberr.h"
 #include "genalg.h"
 #include "neuranet.h"
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <fcntl.h>
 
 // http://www.cs.toronto.edu/~delve/data/abalone/desc.html
 // Results for comparison available in 
@@ -22,25 +25,27 @@
 #define NB_INPUT 10
 #define NB_OUTPUT 1
 // Nb max of hidden values, links and base functions
-#define NB_MAXHIDDEN (NB_INPUT * 2)
-#define NB_MAXLINK (NB_MAXHIDDEN * 10)
+#define NB_MAXHIDDEN (NB_INPUT * 2) * 2
+#define NB_MAXLINK (NB_MAXHIDDEN * 10) * 2
 #define NB_MAXBASE NB_MAXLINK
 // Size of the gene pool and elite pool
-#define ADN_SIZE_POOL 100
+#define ADN_SIZE_POOL 200
 #define ADN_SIZE_ELITE 20
 // Diversity threshold for KT event in GenAlg
-#define DIVERSITY_THRESHOLD 0.00001
+#define DIVERSITY_THRESHOLD 0.5
 // Initial best value during learning, must be lower than any
 // possible value returned by Evaluate()
 #define INIT_BEST_VAL -10000.0
 // Value of the NeuraNet above which the learning process stops
-#define STOP_LEARNING_AT_VAL -0.01
+#define STOP_LEARNING_AT_VAL -1.0
 // Number of epoch above which the learning process stops
-#define STOP_LEARNING_AT_EPOCH 100000
+#define STOP_LEARNING_AT_EPOCH 1000
 // Save NeuraNet in compact format
 #define COMPACT true
 // Switch between mutable links and immutable links
 #define MUTABLE_LINK 1
+// Number of threads used during learning
+#define NB_THREAD 10
 
 // Categories of data sets
 
@@ -82,6 +87,19 @@ DataSetCat GetCategoryFromName(const char* const name) {
   // Return the category
   return cat;
 }
+
+// Structure for multithreading
+typedef struct ThreadData {
+    // The adn to be evaluate
+    GenAlgAdn* adn;
+    // The index of the adn
+    int iAdn;
+    // Declare the pipe file descriptors
+    int pipeChildToParent[2];
+    int pipeParentToChild[2];
+    // PID
+    pid_t pid;
+} ThreadData;
 
 // Load the data set of category 'cat' in the DataSet 'that'
 // Return true on success, else false
@@ -254,7 +272,6 @@ float Evaluate(const NeuraNet* const that,
   float val = 0.0;
   
   // Evaluate
-  
   for (int iSample = dataset->_nbSample; iSample--;) {
     for (int iInp = 0; iInp < NNGetNbInput(that); ++iInp) {
       VecSet(input, iInp,
@@ -374,7 +391,8 @@ void Learn(DataSetCat cat) {
   }
   // Set the diveristy
   GASetDiversityThreshold(ga, DIVERSITY_THRESHOLD);
-  
+
+  // Turn on the TextOMeter
   GASetTextOMeterFlag(ga, true);
   
   // If there is a NeuraNet available, reload it into the GenAlg
@@ -405,6 +423,7 @@ void Learn(DataSetCat cat) {
   printf("Will stop when curEpoch >= %lu or bestVal >= %f\n",
     limitEpoch, STOP_LEARNING_AT_VAL);
   printf("Will save the best NeuraNet in ./bestnn.txt at each improvement\n");
+  printf("Will use %d thread(s)\n", NB_THREAD);
   fflush(stdout);
   // Declare a variable to memorize the best value in the current epoch
   float curBest = 0.0;
@@ -419,33 +438,217 @@ void Learn(DataSetCat cat) {
     curBest = INIT_BEST_VAL;
     curWorstElite = INIT_BEST_VAL;
     int curBestI = 0;
+#if NB_THREAD == 1
     // For each adn in the GenAlg
-    int startEnt = 0;
-    if (GAGetCurEpoch(ga) > 0 && GAGetFlagKTEvent(ga) == false)
-      startEnt = GAGetNbElites(ga);
-    for (int iEnt = startEnt; iEnt < GAGetNbAdns(ga); ++iEnt) {
+    for (int iEnt = 0; iEnt < GAGetNbAdns(ga); ++iEnt) {
       // Get the adn
       GenAlgAdn* adn = GAAdn(ga, iEnt);
-      // Set the links and base functions of the NeuraNet according
-      // to this adn
-      if (GABestAdnF(ga) != NULL)
-        NNSetBases(nn, GAAdnAdnF(adn));
+      // If this adn is new
+      if (GAAdnIsNew(adn) == true) {
+        // Set the links and base functions of the NeuraNet according
+        // to this adn
+        if (GABestAdnF(ga) != NULL)
+          NNSetBases(nn, GAAdnAdnF(adn));
 #if MUTABLE_LINK == 1
-      if (GABestAdnI(ga) != NULL)
-        NNSetLinks(nn, GAAdnAdnI(adn));
+        if (GABestAdnI(ga) != NULL)
+          NNSetLinks(nn, GAAdnAdnI(adn));
 #endif
-      // Evaluate the NeuraNet
-      float value = Evaluate(nn, dataset, curWorstElite);
-      // Update the value of this adn
-      GASetAdnValue(ga, adn, value);
-      // Update the best value in the current epoch
-      if (value > curBest) {
-        curBest = value;
-        curBestI = iEnt;
+        // Evaluate the NeuraNet
+        float value = Evaluate(nn, dataset, curWorstElite);
+        // Update the value of this adn
+        GASetAdnValue(ga, adn, value);
+        // Update the best value in the current epoch
+        if (value > curBest) {
+          curBest = value;
+          curBestI = iEnt;
+        }
+        if (value < curWorst)
+          curWorst = value;
       }
-      if (value < curWorst)
-        curWorst = value;
     }
+#else
+    // Declare the set of entities to evaluate
+    GSet entToEval = GSetCreateStatic();
+    // For each adn in the GenAlg
+    for (int iEnt = 0; iEnt < GAGetNbAdns(ga); ++iEnt) {
+      // Get the adn
+      GenAlgAdn* adn = GAAdn(ga, iEnt);
+      // If this adn is new
+      if (GAAdnIsNew(adn) == true) {
+        // Add it to the set of entities to evaluate
+        ThreadData* data = PBErrMalloc(NeuraNetErr, sizeof(ThreadData));
+        data->adn = adn;
+        data->iAdn = iEnt;
+        GSetAppend(&entToEval, data);
+      }
+    }
+    // Declare the set of entities currently evaluated
+    GSet entUnderEval = GSetCreateStatic();
+    // While there are entities to evaluate or still entities
+    // under evaluation
+    while (GSetNbElem(&entToEval) > 0 || GSetNbElem(&entUnderEval) > 0) {
+      // While there are thread available and entity to evaluate
+      while (GSetNbElem(&entUnderEval) < NB_THREAD &&
+        GSetNbElem(&entToEval) > 0) {
+        // Get one entity to evaluate
+        ThreadData* data = GSetPop(&entToEval);
+        // Add it to the entity under evaluation
+        GSetAppend(&entUnderEval, data);
+        // Create the pipe to receive the reply form the child process
+        if (pipe(data->pipeChildToParent) == -1) {
+          fprintf(stderr,"ref: pipe() failed!\n%s\n", strerror(errno));
+          exit(0);
+        };
+        if (pipe(data->pipeParentToChild) == -1) {
+          fprintf(stderr,"ref: pipe() failed!\n%s\n", strerror(errno));
+          exit(0);
+        };
+        // Fork to evaluate this entity in its own thread
+        int pid = fork();
+        if (pid == 0) { // Child thread
+//printf("child new for %d\n",data->iAdn);
+//fflush(stdout);
+
+          // Set the links and base functions of the NeuraNet according
+          // to this adn
+          if (GABestAdnF(ga) != NULL)
+            NNSetBases(nn, GAAdnAdnF(data->adn));
+#if MUTABLE_LINK == 1
+          if (GABestAdnI(ga) != NULL)
+            NNSetLinks(nn, GAAdnAdnI(data->adn));
+#endif
+          // Evaluate the NeuraNet
+          float value = Evaluate(nn, dataset, curWorstElite);
+//printf("child value %f for %d\n",value,data->iAdn);
+//fflush(stdout);
+          // Return the value to the parent
+          ssize_t ret = write(data->pipeChildToParent[1], &value, sizeof(float));
+          if (ret == -1) {
+            fprintf(stderr,"ref: write() failed!\n%s\n", strerror(errno));
+            exit(0);
+          }
+          // Read ack from the parent
+          char ack = 0;
+          while (ack != 1) {
+            ret = read(data->pipeParentToChild[0], &ack, 1);
+          }
+//printf("child %d %d quit\n",data->iAdn, ack);
+//fflush(stdout);
+          // Close the pipe
+          int retClose;
+          retClose = close(data->pipeParentToChild[0]);
+          if (retClose == -1) {
+            fprintf(stderr,"ref: close() failed!\n%s\n", strerror(errno));
+            exit(0);
+          }
+          retClose = close(data->pipeParentToChild[1]);
+          if (retClose == -1) {
+            fprintf(stderr,"ref: close() failed!\n%s\n", strerror(errno));
+            exit(0);
+          }
+          retClose = close(data->pipeChildToParent[0]);
+          if (retClose == -1) {
+            fprintf(stderr,"ref: close() failed!\n%s\n", strerror(errno));
+            exit(0);
+          }
+          retClose = close(data->pipeChildToParent[1]);
+          if (retClose == -1) {
+            fprintf(stderr,"ref: close() failed!\n%s\n", strerror(errno));
+            exit(0);
+          }
+          // Nothing to do any more
+          exit(0);
+        } else { // Parent thread
+          // Memorize the child pid
+          data->pid = pid;
+//printf("parent create %d for %d\n",data->pid,data->iAdn);
+//fflush(stdout);
+          // Set the reading pipe in non blocking mode
+          int ret = fcntl(
+            data->pipeChildToParent[0], F_SETFL, 
+            fcntl(data->pipeChildToParent[0], F_GETFL) | O_NONBLOCK);
+          if (ret == -1) {
+            fprintf(stderr,"ref: fcntl() failed!\n%s\n", strerror(errno));
+            exit(0);
+          }
+        }
+      }
+      // Declare a variable to manage the iterator step
+      bool step;
+      // Listen to the result of the current child threads
+      GSetIterForward iter = GSetIterForwardCreateStatic(&entUnderEval);
+      do {
+        // Get the thread data
+        ThreadData* data = GSetIterGet(&iter);
+        // Non blocking read of the reply
+        float value;
+        ssize_t ret = read(data->pipeChildToParent[0], &value, sizeof(float));
+        // If we've received something make sure we received everything
+        while (ret > 0 && ret < (ssize_t)sizeof(float)) {
+          ssize_t retNext = read(data->pipeChildToParent[0], &value + ret, sizeof(float) - ret);
+          ret += retNext;
+        }
+        // If we could read the value
+        if (ret > 0) {
+//printf("parent value %f for %d from %d\n",value,data->iAdn,data->pid);
+//fflush(stdout);
+          // Send ack to child
+          char ack = 1;
+          ret = write(data->pipeParentToChild[1], &ack, 1);
+          if (ret == -1) {
+            fprintf(stderr,"ref: write() failed!\n%s\n", strerror(errno));
+            exit(0);
+          }
+          // Wait for the child to die
+//printf("parent wait %d to die\n",data->pid);
+//fflush(stdout);
+          waitpid(data->pid, NULL, 0);
+//printf("parent %d died\n",data->pid);
+//fflush(stdout);
+          // Get the adn
+          GenAlgAdn* adn = GAAdn(ga, data->iAdn);
+          // Update the value of this adn
+          GASetAdnValue(ga, adn, value);
+          // Update the best value in the current epoch
+          if (value > curBest) {
+            curBest = value;
+            curBestI = data->iAdn;
+          }
+          if (value < curWorst)
+            curWorst = value;
+          // Close the pipe
+          int retClose = close(data->pipeParentToChild[0]);
+          if (retClose == -1) {
+            fprintf(stderr,"ref: close() failed!\n%s\n", strerror(errno));
+            exit(0);
+          }
+          retClose = close(data->pipeParentToChild[1]);
+          if (retClose == -1) {
+            fprintf(stderr,"ref: close() failed!\n%s\n", strerror(errno));
+            exit(0);
+          }
+          retClose = close(data->pipeChildToParent[0]);
+          if (retClose == -1) {
+            fprintf(stderr,"ref: close() failed!\n%s\n", strerror(errno));
+            exit(0);
+          }
+          retClose = close(data->pipeChildToParent[1]);
+          if (retClose == -1) {
+            fprintf(stderr,"ref: close() failed!\n%s\n", strerror(errno));
+            exit(0);
+          }
+          // Free memory
+          free(data);
+          // Remove the adn from the list of adn under evaluation
+          step = GSetIterRemoveElem(&iter);
+        // Else, simply step to the next thread
+        } else {
+          step = GSetIterStep(&iter);
+        }
+      } while (step);
+    }
+//printf("%ld %ld\n",GSetNbElem(&entToEval),GSetNbElem(&entUnderEval));
+#endif
     // Memorize the current value of the worst elite
     curWorstElite = GAAdnGetVal(GAAdn(ga, GAGetNbElites(ga) - 1));
     // Measure time
