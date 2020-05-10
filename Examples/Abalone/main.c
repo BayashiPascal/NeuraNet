@@ -25,8 +25,8 @@
 #define NB_INPUT 10
 #define NB_OUTPUT 1
 // Nb max of hidden values, links and base functions
-#define NB_MAXHIDDEN (NB_INPUT * 2) * 2
-#define NB_MAXLINK (NB_MAXHIDDEN * 10) * 2
+#define NB_MAXHIDDEN (NB_INPUT * 2)
+#define NB_MAXLINK (NB_MAXHIDDEN * 10)
 #define NB_MAXBASE NB_MAXLINK
 // Size of the gene pool and elite pool
 #define ADN_SIZE_POOL 200
@@ -39,7 +39,7 @@
 // Value of the NeuraNet above which the learning process stops
 #define STOP_LEARNING_AT_VAL -1.0
 // Number of epoch above which the learning process stops
-#define STOP_LEARNING_AT_EPOCH 1000
+#define STOP_LEARNING_AT_EPOCH 100000
 // Save NeuraNet in compact format
 #define COMPACT true
 // Switch between mutable links and immutable links
