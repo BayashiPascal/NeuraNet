@@ -29,10 +29,10 @@
 #define NB_MAXLINK (NB_MAXHIDDEN * 10)
 #define NB_MAXBASE NB_MAXLINK
 // Size of the gene pool and elite pool
-#define ADN_SIZE_POOL 200
+#define ADN_SIZE_POOL 100
 #define ADN_SIZE_ELITE 20
 // Diversity threshold for KT event in GenAlg
-#define DIVERSITY_THRESHOLD 0.5
+#define DIVERSITY_THRESHOLD 0.1
 // Initial best value during learning, must be lower than any
 // possible value returned by Evaluate()
 #define INIT_BEST_VAL -10000.0
@@ -307,9 +307,9 @@ NeuraNet* CreateNN(void) {
   // Create the NeuraNet
   int nbIn = NB_INPUT;
   int nbOut = NB_OUTPUT;
-  VecLong* layers = VecLongCreate(1);
-  VecSet(layers, 0, NB_INPUT * 2);
-  //VecSet(layers, 1, NB_INPUT);
+  VecLong* layers = VecLongCreate(2);
+  VecSet(layers, 0, NB_INPUT);
+  VecSet(layers, 1, NB_INPUT);
   NeuraNet* nn = 
     NeuraNetCreateFullyConnected(nbIn, nbOut, layers);
   VecFree(&layers);
@@ -455,6 +455,10 @@ void Learn(DataSetCat cat) {
 #endif
         // Evaluate the NeuraNet
         float value = Evaluate(nn, dataset, curWorstElite);
+        // Trick the value to avoid duplicate of the best entity
+        if (fabs(value - curBest) < PBMATH_EPSILON) {
+          value -= 100.0;
+        }
         // Update the value of this adn
         GASetAdnValue(ga, adn, value);
         // Update the best value in the current epoch
@@ -506,9 +510,6 @@ void Learn(DataSetCat cat) {
         // Fork to evaluate this entity in its own thread
         int pid = fork();
         if (pid == 0) { // Child thread
-//printf("child new for %d\n",data->iAdn);
-//fflush(stdout);
-
           // Set the links and base functions of the NeuraNet according
           // to this adn
           if (GABestAdnF(ga) != NULL)
@@ -519,8 +520,6 @@ void Learn(DataSetCat cat) {
 #endif
           // Evaluate the NeuraNet
           float value = Evaluate(nn, dataset, curWorstElite);
-//printf("child value %f for %d\n",value,data->iAdn);
-//fflush(stdout);
           // Return the value to the parent
           ssize_t ret = write(data->pipeChildToParent[1], &value, sizeof(float));
           if (ret == -1) {
@@ -532,8 +531,6 @@ void Learn(DataSetCat cat) {
           while (ack != 1) {
             ret = read(data->pipeParentToChild[0], &ack, 1);
           }
-//printf("child %d %d quit\n",data->iAdn, ack);
-//fflush(stdout);
           // Close the pipe
           int retClose;
           retClose = close(data->pipeParentToChild[0]);
@@ -561,8 +558,6 @@ void Learn(DataSetCat cat) {
         } else { // Parent thread
           // Memorize the child pid
           data->pid = pid;
-//printf("parent create %d for %d\n",data->pid,data->iAdn);
-//fflush(stdout);
           // Set the reading pipe in non blocking mode
           int ret = fcntl(
             data->pipeChildToParent[0], F_SETFL, 
@@ -590,8 +585,6 @@ void Learn(DataSetCat cat) {
         }
         // If we could read the value
         if (ret > 0) {
-//printf("parent value %f for %d from %d\n",value,data->iAdn,data->pid);
-//fflush(stdout);
           // Send ack to child
           char ack = 1;
           ret = write(data->pipeParentToChild[1], &ack, 1);
@@ -600,13 +593,13 @@ void Learn(DataSetCat cat) {
             exit(0);
           }
           // Wait for the child to die
-//printf("parent wait %d to die\n",data->pid);
-//fflush(stdout);
           waitpid(data->pid, NULL, 0);
-//printf("parent %d died\n",data->pid);
-//fflush(stdout);
           // Get the adn
           GenAlgAdn* adn = GAAdn(ga, data->iAdn);
+          // Trick the value to avoid duplicate of the best entity
+          if (fabs(value - curBest) < PBMATH_EPSILON) {
+            value -= 100.0;
+          }
           // Update the value of this adn
           GASetAdnValue(ga, adn, value);
           // Update the best value in the current epoch
@@ -647,7 +640,6 @@ void Learn(DataSetCat cat) {
         }
       } while (step);
     }
-//printf("%ld %ld\n",GSetNbElem(&entToEval),GSetNbElem(&entUnderEval));
 #endif
     // Memorize the current value of the worst elite
     curWorstElite = GAAdnGetVal(GAAdn(ga, GAGetNbElites(ga) - 1));
@@ -664,13 +656,13 @@ void Learn(DataSetCat cat) {
     // If there has been improvement during this epoch
     if (curBest > bestVal) {
       bestVal = curBest;
+      GenAlgAdn* bestAdn = GAAdn(ga, curBestI);
       // Display info about the improvment
-      printf("Improvement at epoch %05lu: %f(%03d) (in %02d:%02d:%02d:%02ds)       \n", 
-        GAGetCurEpoch(ga), bestVal, curBestI, day, hour, min, sec);
+      printf("Improvement at epoch %05lu: %f(%03d,%08ld->%08ld) (in %02d:%02d:%02d:%02ds)       \n", 
+        GAGetCurEpoch(ga), bestVal, curBestI, bestAdn->_idParents[0], bestAdn->_id, day, hour, min, sec);
       fflush(stdout);
       // Set the links and base functions of the NeuraNet according
       // to the best adn
-      GenAlgAdn* bestAdn = GAAdn(ga, curBestI);
       if (GAAdnAdnF(bestAdn) != NULL)
         NNSetBases(nn, GAAdnAdnF(bestAdn));
 #if MUTABLE_LINK == 1
