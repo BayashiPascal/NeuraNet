@@ -32,7 +32,7 @@
 #define ADN_SIZE_POOL 100
 #define ADN_SIZE_ELITE 20
 // Diversity threshold for KT event in GenAlg
-#define DIVERSITY_THRESHOLD 0.1
+#define DIVERSITY_THRESHOLD 0.001 //0.1
 // Initial best value during learning, must be lower than any
 // possible value returned by Evaluate()
 #define INIT_BEST_VAL -10000.0
@@ -455,10 +455,9 @@ void Learn(DataSetCat cat) {
 #endif
         // Evaluate the NeuraNet
         float value = Evaluate(nn, dataset, curWorstElite);
-        // Trick the value to avoid duplicate of the best entity
-        if (fabs(value - curBest) < PBMATH_EPSILON) {
-          value -= 100.0;
-        }
+        // Depreciate entites identical to the current best
+        if (fabs(value - curBest) < PBMATH_EPSILON)
+          value -= 1000.0;
         // Update the value of this adn
         GASetAdnValue(ga, adn, value);
         // Update the best value in the current epoch
@@ -596,10 +595,9 @@ void Learn(DataSetCat cat) {
           waitpid(data->pid, NULL, 0);
           // Get the adn
           GenAlgAdn* adn = GAAdn(ga, data->iAdn);
-          // Trick the value to avoid duplicate of the best entity
-          if (fabs(value - curBest) < PBMATH_EPSILON) {
-            value -= 100.0;
-          }
+          // Depreciate entites identical to the current best
+          if (fabs(value - curBest) < PBMATH_EPSILON)
+            value -= 1000.0;
           // Update the value of this adn
           GASetAdnValue(ga, adn, value);
           // Update the best value in the current epoch
