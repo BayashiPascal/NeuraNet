@@ -848,6 +848,10 @@ int main(int argc, char** argv) {
     } else if (strcmp(argv[1], "-predict") == 0) {
       mode = 2;
     }
+  } else if (argc >= 2) {
+    if (strcmp(argv[1], "-convert") == 0) {
+      mode = 3;
+    }
   }
   // If the mode is invalid print some help
   if (mode == -1) {
@@ -855,6 +859,7 @@ int main(int argc, char** argv) {
     printf("-learn <dataset name>\n");
     printf("-check <dataset name>\n");
     printf("-predict <input values>\n");
+    printf("-convert\n");
     return 0;
   }
   if (mode == 0) {
@@ -879,6 +884,55 @@ int main(int argc, char** argv) {
     fclose(fd);
     Predict(nn, argc - 2, argv + 2);
     NeuraNetFree(&nn);
+  } else if (mode == 3) {
+    DataSet* dataset = PBErrMalloc(NeuraNetErr, sizeof(DataSet));
+    bool ret = DataSetLoad(dataset, dataall);
+    if (!ret) {
+      printf("Couldn't load the data\n");
+      return 1;
+    }
+    FILE* fp = fopen("./Prototask.json", "w");
+    fprintf(fp,
+"{\n \
+  \"dataSet\": \"Abalone dataset\",\n \
+  \"dataSetType\": \"0\",\n \
+  \"desc\": \"Abalone dataset, 10 inputs, 1 output\",\n \
+  \"dim\": {\n \
+    \"_dim\":\"1\",\n \
+    \"_val\":[\"11\"]\n \
+  },\n \
+  \"nbSample\": \"%d\",\n \
+  \"samples\": [\n", dataset->_nbSample);
+    for (int iSample = 0;
+      iSample < dataset->_nbSample;
+      ++iSample) {
+        fprintf(fp,
+"    {\n \
+      \"_dim\":\"11\",\n \
+      \"_val\":[\"%f\", \"%f\", \"%f\", \"%f\", \"%f\", \"%f\", \
+      \"%f\", \"%f\", \"%f\", \"%f\", \"%f\"]\n \
+   }",
+      dataset->_samples[iSample]._props[0],
+      dataset->_samples[iSample]._props[1],
+      dataset->_samples[iSample]._props[2],
+      dataset->_samples[iSample]._props[3],
+      dataset->_samples[iSample]._props[4],
+      dataset->_samples[iSample]._props[5],
+      dataset->_samples[iSample]._props[6],
+      dataset->_samples[iSample]._props[7],
+      dataset->_samples[iSample]._props[8],
+      dataset->_samples[iSample]._props[9],
+      dataset->_samples[iSample]._age);
+
+      if (iSample < dataset->_nbSample - 1)
+        fprintf(fp, ",");
+      fprintf(fp, "\n");
+    }
+    fprintf(fp,
+"  ]\n" \
+"}\n");
+    fclose(fp);
+    DataSetFree(&dataset);
   }
   // Return success code
   return 0;
