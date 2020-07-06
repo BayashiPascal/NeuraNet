@@ -866,7 +866,8 @@ int main(int argc, char** argv) {
     Learn(cat);
   } else if (mode == 1) {
     NeuraNet* nn = NULL;
-    FILE* fd = fopen("./bestnn.txt", "r");
+    //FILE* fd = fopen("./bestnn.txt", "r");
+    FILE* fd = fopen("/home/bayashi/GitHub/Morpheus/abalone.morpheus.nn", "r");
     if (!NNLoad(&nn, fd)) {
       printf("Couldn't load the best NeuraNet\n");
       return 0;
